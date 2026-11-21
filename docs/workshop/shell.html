@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Build your own AI code reviewer · Workshop</title>
+<link rel="stylesheet" href="deck.css">
+<link rel="stylesheet" href="talk.css">
+<link rel="stylesheet" href="ws.css">
+</head>
+<body>
+<canvas id="gl" aria-hidden="true"></canvas>
+<div class="vignette"></div>
+<div class="grain"></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="gGoogle" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#57caff"/><stop offset=".33" stop-color="#5cdb6d"/>
+      <stop offset=".66" stop-color="#ffd427"/><stop offset="1" stop-color="#ff7daf"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<div id="viewport"><div id="stage">
+
+{{SLIDES}}
+
+</div></div>
+<nav id="decksw" aria-label="Switch deck"><a href="../talk/">Talk</a><a href="../workshop/" aria-current="page">Workshop</a></nav>
+<div id="bar"></div>
+<div id="scrub" role="slider" aria-label="Slides" tabindex="-1"><div class="trk"><div class="fill"></div></div></div>
+<div id="peek" aria-hidden="true"><div class="pv"></div><div class="cap"><b></b><span></span></div></div>
+
+<script src="vendor/three.min.js"></script>
+<script src="vendor/qrcode.min.js"></script>
+<script>
+/* slide numbers in footers + QR codes (runs before the engine measures panels) */
+(function(){
+  const sl=[...document.querySelectorAll('#stage .slide')], n=String(sl.length).padStart(2,'0');
+  sl.forEach((s,k)=>s.querySelectorAll('.foot b').forEach(b=>b.textContent=String(k+1).padStart(2,'0')+' / '+n));
+  document.querySelectorAll('.scrolltbl').forEach(e=>{e.addEventListener('click',ev=>ev.stopPropagation());e.addEventListener('keydown',ev=>ev.stopPropagation());});
+  /* numbers with data-count tick up from 0 when their slide opens (not in QA / lite) */
+  addEventListener('deck:slide',e=>{ const D=window.DECK; if(!D||D.QA||D.lite) return;
+    e.detail.slide.querySelectorAll('[data-count]').forEach(el=>{ const n=+el.dataset.count, dur=1400; let t0=0;
+      const f=now=>{ const k=Math.min(1,(now-t0)/dur); el.textContent=Math.round(n*(1-Math.pow(1-k,3))); if(k<1) requestAnimationFrame(f); };
+      el.textContent='0'; setTimeout(()=>{ t0=performance.now(); requestAnimationFrame(f); },500); }); });
+  document.querySelectorAll('.qr[data-url]').forEach(q=>{ try{ new QRCode(q,{text:q.dataset.url,width:220,height:220,colorDark:'#0b0c0f',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M}); }catch(e){ q.textContent=q.dataset.url; } });
+})();
+</script>
+<script src="deck.js"></script>
+<script src="scene.js"></script>
+<script src="nav.js"></script>
+<script src="ws.js"></script>
+<script src="media.js"></script>
+</body>
+</html>

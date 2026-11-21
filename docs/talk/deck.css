@@ -1,0 +1,212 @@
+/* Google Sans + Roboto Mono, bundled (SIL OFL) */
+@font-face{font-family:'Google Sans';font-style:normal;font-weight:400 700;font-display:swap;src:url("fonts/GoogleSans-cyrillic-ext.woff2") format('woff2');unicode-range:U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F}
+@font-face{font-family:'Google Sans';font-style:normal;font-weight:400 700;font-display:swap;src:url("fonts/GoogleSans-cyrillic.woff2") format('woff2');unicode-range:U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116}
+@font-face{font-family:'Google Sans';font-style:normal;font-weight:400 700;font-display:swap;src:url("fonts/GoogleSans-latin-ext.woff2") format('woff2');unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF}
+@font-face{font-family:'Google Sans';font-style:normal;font-weight:400 700;font-display:swap;src:url("fonts/GoogleSans-latin.woff2") format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+@font-face{font-family:'Roboto Mono';font-style:normal;font-weight:300 500;font-display:swap;src:url("fonts/RobotoMono-cyrillic-ext.woff2") format('woff2');unicode-range:U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F}
+@font-face{font-family:'Roboto Mono';font-style:normal;font-weight:300 500;font-display:swap;src:url("fonts/RobotoMono-cyrillic.woff2") format('woff2');unicode-range:U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116}
+@font-face{font-family:'Roboto Mono';font-style:normal;font-weight:300 500;font-display:swap;src:url("fonts/RobotoMono-latin-ext.woff2") format('woff2');unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF}
+@font-face{font-family:'Roboto Mono';font-style:normal;font-weight:300 500;font-display:swap;src:url("fonts/RobotoMono-latin.woff2") format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+
+/* ================= DevFest Night: dark 3D deck ================= */
+:root{
+  --bg0:#06070a; --bg1:#0d0f15;
+  --tx:#f4f5f7; --tx2:#a3a9b4; --tx3:#6b7280;
+  --line:rgba(255,255,255,.14);
+  --blue:#4285f4; --green:#34a853; --yellow:#fbbc04; --red:#ea4335;
+  --blue-h:#57caff; --green-h:#5cdb6d; --yellow-h:#ffd427; --red-h:#ff7daf;
+  --font:'Google Sans',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
+  --mono:'Roboto Mono',ui-monospace,Menlo,monospace;
+  --ease:cubic-bezier(.16,1,.3,1);
+  --google:linear-gradient(90deg,var(--blue-h),var(--green-h),var(--yellow-h),var(--red-h),var(--blue-h));
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg0);overflow:hidden;color:var(--tx);font-family:var(--font);-webkit-font-smoothing:antialiased}
+body.nogl{background:radial-gradient(1200px 700px at 75% 40%,#13203a 0%,transparent 60%),radial-gradient(900px 600px at 15% 80%,#2a1420 0%,transparent 60%),var(--bg0)}
+
+#gl{position:fixed;inset:0;width:100vw;height:100vh;display:block}
+.vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(120% 90% at 50% 45%,transparent 55%,rgba(0,0,0,.6) 100%)}
+.grain{position:fixed;inset:0;pointer-events:none;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+#viewport{position:fixed;inset:0}
+#stage{position:absolute;left:0;top:0;width:1600px;height:900px;transform-origin:0 0}
+
+/* ---------- slides & 3D rig ---------- */
+/* opacity lives on .slide, never on the 3D rig: opacity < 1 flattens preserve-3d, and the text would jump
+   into its 3D position the moment the fade finished */
+.slide{position:absolute;inset:0;perspective:1700px;perspective-origin:50% 45%;visibility:hidden;pointer-events:none;opacity:0;transition:opacity .7s ease}
+.slide.active{visibility:visible;pointer-events:auto;opacity:1}
+.rig{position:absolute;inset:0;transform-style:preserve-3d;
+  transform:translateZ(-320px) rotateX(10deg);
+  transition:transform 1.1s var(--ease)}
+.slide.active .rig{transform:none}
+.slide.past .rig{transform:translateZ(380px) rotateX(-6deg)}
+.tilt{position:absolute;inset:0;transform-style:preserve-3d;
+  transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg))}
+.z1{transform:translateZ(40px)} .z2{transform:translateZ(90px)} .z3{transform:translateZ(150px)}
+.z1,.z2,.z3{transform-style:preserve-3d}
+.abs{position:absolute}
+
+/* ---------- glass panels (shape set by JS: clip-path + svg edge) ---------- */
+.panel{position:absolute;
+  background:linear-gradient(155deg,rgba(38,42,56,.62) 0%,rgba(16,18,26,.55) 45%,rgba(10,11,16,.72) 100%);
+  -webkit-backdrop-filter:blur(16px) saturate(140%);backdrop-filter:blur(16px) saturate(140%)}
+.panel::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(700px circle at var(--px,-999px) var(--py,-999px),rgba(255,255,255,.085),transparent 60%)}
+.panel.ghost{background:linear-gradient(155deg,rgba(255,255,255,.035),rgba(255,255,255,0));-webkit-backdrop-filter:none;backdrop-filter:none}
+svg.edge{position:absolute;overflow:visible;pointer-events:none}
+svg.edge .base{fill:none;stroke:rgba(255,255,255,.17);stroke-width:1.6}
+svg.edge .run{fill:none;stroke:url(#gGoogle);stroke-width:2;stroke-linecap:round;opacity:.7}
+
+/* ---------- type ---------- */
+.kicker{font:300 22px/1.3 var(--mono);color:var(--tx2);margin:0 0 16px;display:flex;align-items:center;gap:12px;letter-spacing:.02em}
+.kicker::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--c,var(--blue-h));box-shadow:0 0 14px var(--c,var(--blue-h))}
+.title{font:700 112px/1.0 var(--font);letter-spacing:-.035em;margin:0}
+.h1{font:700 88px/1.04 var(--font);letter-spacing:-.03em;margin:0}
+.h{font:700 58px/1.12 var(--font);letter-spacing:-.02em;margin:0 0 30px}
+.lead{font:300 30px/1.45 var(--mono);color:var(--tx2);margin:26px 0 0;max-width:40ch}
+.body{font:400 34px/1.5 var(--font);color:#d9dce2;margin:0;max-width:46ch}
+.author{font:400 30px/1.35 var(--font);color:var(--tx2);margin-top:40px}
+.author b{display:block;color:var(--tx);font-weight:500}
+.shine{background:var(--google);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 7s linear infinite}
+@keyframes shine{to{background-position:-300% 0}}
+.mut{color:var(--tx2)}
+
+/* bullets with glowing colored dots */
+.list{list-style:none;margin:0;padding:0;font:400 36px/1.5 var(--font)}
+.list>li{position:relative;padding-left:1.2em;margin:0 0 .5em}
+.list>li::before{content:"";position:absolute;left:.12em;top:.5em;width:.46em;height:.46em;border-radius:50%;background:var(--c);box-shadow:0 0 18px var(--c)}
+.list>li:nth-child(4n+1){--c:var(--blue-h)} .list>li:nth-child(4n+2){--c:var(--green-h)}
+.list>li:nth-child(4n+3){--c:var(--yellow-h)} .list>li:nth-child(4n+4){--c:var(--red-h)}
+.list ul{list-style:none;padding:0;margin:.3em 0 0;font-size:28px;color:var(--tx2)}
+.list ul li{position:relative;padding-left:1.1em;margin:.15em 0}
+.list ul li::before{content:"";position:absolute;left:.15em;top:.55em;width:.4em;height:.4em;border-radius:50%;border:2px solid var(--tx2)}
+
+/* ---------- step reveal ---------- */
+[data-s]{opacity:0;transform:translateY(22px);transition:opacity .6s var(--ease),transform .8s var(--ease)}
+[data-s].on{opacity:1;transform:none}
+.z1[data-s].on{transform:translateZ(40px)} .z2[data-s].on{transform:translateZ(90px)}
+
+/* builds (clicker reveal, deck.js): `translate` composes with the z-layer transform */
+[data-b]{opacity:0;translate:0 26px;transition:opacity .55s var(--ease),translate .75s var(--ease)}
+[data-b].on{opacity:1;translate:none}
+body.qa [data-b]{transition:none}
+/* reveal 'auto': heading comes with the slide, the other blocks follow in a quick cascade (--in = delay) */
+[data-in]{opacity:0;translate:0 18px;transition:opacity .45s var(--ease) var(--in,0s),translate .6s var(--ease) var(--in,0s)}
+.slide.active [data-in]{opacity:1;translate:none}
+/* motion 'flat': no cursor tilt, the slide stands straight; transitions and animations stay */
+body.flat .tilt{transform:none}
+
+/* ---------- chart elements, dark ---------- */
+.b{--c:var(--blue-h)} .g{--c:var(--green-h)} .y{--c:var(--yellow-h)} .r{--c:var(--red-h)}
+.box{position:relative;border-radius:22px;padding:20px 28px;font:400 30px/1.3 var(--font);
+  background:linear-gradient(160deg,color-mix(in srgb,var(--c) 16%,transparent),rgba(255,255,255,.02));
+  border:1.5px solid color-mix(in srgb,var(--c) 65%,transparent);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 24px 60px -24px color-mix(in srgb,var(--c) 70%,transparent)}
+.box small{display:block;font:300 20px/1.35 var(--mono);color:var(--tx2);margin-top:6px}
+.box.solid{background:var(--c);color:#0b0c0f;border-color:transparent;font-weight:500;
+  box-shadow:0 0 0 6px color-mix(in srgb,var(--c) 18%,transparent),0 18px 50px -12px var(--c)}
+.label{display:inline-flex;align-items:center;border-radius:999px;padding:7px 24px;font:500 22px/1.2 var(--font);background:var(--c);color:#0b0c0f;box-shadow:0 0 24px -4px var(--c)}
+.label.ink{background:#fff;--c:#fff}
+.cap{display:inline-block;border:1.5px solid rgba(255,255,255,.3);border-radius:999px;padding:5px 18px;font:300 18px/1.2 var(--mono);color:var(--tx2);background:rgba(255,255,255,.04)}
+.flow{display:flex;align-items:center;gap:12px}
+.node{display:flex;flex-direction:column;align-items:center;gap:14px}
+.arr{position:relative;width:70px;height:2px;flex:none;align-self:center;background:linear-gradient(90deg,transparent,var(--c));overflow:visible}
+.arr::after{content:"";position:absolute;right:-1px;top:50%;width:11px;height:11px;border-top:2px solid var(--c);border-right:2px solid var(--c);transform:translateY(-50%) rotate(45deg)}
+.arr::before{content:"";position:absolute;top:-3px;left:0;width:8px;height:8px;border-radius:50%;background:#fff;box-shadow:0 0 12px var(--c),0 0 4px #fff;animation:pulse 1.6s var(--ease) infinite}
+@keyframes pulse{from{left:0;opacity:0}20%{opacity:1}to{left:62px;opacity:0}}
+
+/* code window */
+.win{border-radius:24px;overflow:hidden;border:1px solid rgba(255,255,255,.12);
+  background:linear-gradient(180deg,rgba(22,24,32,.92),rgba(10,11,16,.92));box-shadow:0 50px 120px -40px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.03) inset}
+.win .bar{display:flex;gap:10px;align-items:center;padding:16px 22px;border-bottom:1px solid rgba(255,255,255,.07);font:300 18px var(--mono);color:var(--tx3)}
+.win .bar i{width:13px;height:13px;border-radius:50%;display:block}
+.win pre{margin:0;padding:26px 30px;font:400 24px/1.65 var(--mono);color:#e8eaed;white-space:pre}
+.tk{color:var(--blue-h)} .ts{color:var(--green-h)} .tn{color:var(--yellow-h)} .tc{color:#7d8590} .te{color:var(--red-h)}
+
+/* section number: outlined, layered in depth */
+.num{font:700 160px/0.8 var(--font);letter-spacing:-.05em;color:transparent;-webkit-text-stroke:2px rgba(255,255,255,.55)}
+.num.back{-webkit-text-stroke:2px var(--c);opacity:.45;filter:blur(.5px)}
+
+/* big number with real 3D extrusion (clones behind, see deck.js) */
+.extrude{position:relative;transform-style:preserve-3d;display:inline-block}
+.extrude>span{position:absolute;inset:0;color:#1a2440}
+.big{font:700 300px/0.9 var(--font);letter-spacing:-.06em}
+.big .face{position:relative;background:var(--google);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 7s linear infinite;filter:drop-shadow(0 0 30px rgba(87,202,255,.25))}
+
+/* statement words */
+.say{font:400 60px/1.24 var(--font);letter-spacing:-.015em;margin:0}
+.say b{font-weight:700}
+.say .w{display:inline-block;opacity:0;transform:translateY(.5em) rotateX(-60deg);transform-origin:50% 100%;
+  transition:opacity .7s var(--ease),transform .9s var(--ease);transition-delay:calc(var(--i)*55ms + .35s)}
+.slide.active .say .w{opacity:1;transform:none}
+.hl{position:relative;color:#0b0c0f;padding:0 .12em;z-index:0}
+.hl::before{content:"";position:absolute;inset:.08em -.02em .02em;border-radius:.18em;background:var(--yellow-h);z-index:-1;box-shadow:0 0 40px -6px var(--yellow-h)}
+
+/* ---------- brand stickers ---------- */
+.badge{position:absolute;width:350px;border-radius:24px;background:#f2f1f0;padding:8px 10px;overflow:hidden;
+  box-shadow:0 40px 80px -30px rgba(0,0,0,.85),0 0 0 1px rgba(255,255,255,.5) inset,0 0 60px -20px rgba(255,212,39,.35)}
+.badge img{display:block;width:100%}
+.badge .loc{position:absolute;left:21.5%;width:57.5%;top:63.5%;height:21%;display:flex;align-items:center;justify-content:center;font:500 18px/1 var(--font);color:#1e1e1e}
+.badge::after{content:"";position:absolute;inset:0;pointer-events:none;mix-blend-mode:screen;
+  background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.9) 44%,rgba(87,202,255,.5) 49%,rgba(255,125,175,.45) 54%,transparent 66%);
+  background-size:300% 100%;animation:holo 5.5s ease-in-out infinite}
+@keyframes holo{0%,100%{background-position:110% 0}50%{background-position:-10% 0}}
+.gdgtext{position:absolute;left:1402px;top:752px;font:400 27px/1.12 var(--font);color:#e8eaed;letter-spacing:-.005em}
+
+/* ---------- chrome ---------- */
+.foot{position:absolute;left:112px;bottom:84px;font:300 17px/1 var(--mono);color:var(--tx3);display:flex;gap:18px;transform:translateZ(20px)}
+.foot b{color:var(--tx2);font-weight:400}
+#bar{position:fixed;left:0;bottom:0;height:3px;width:0;background:var(--google);background-size:200% 100%;box-shadow:0 0 12px rgba(87,202,255,.7);transition:width .6s var(--ease);z-index:5}
+body.qa #bar{display:none}
+body.qa *{transition:none !important;animation-play-state:paused !important}
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition-duration:.01s !important}}
+
+/* ---------- effects toggle ---------- */
+#tools{position:fixed;right:18px;top:16px;z-index:8;display:flex;flex-direction:column;align-items:flex-end;gap:8px;opacity:0;transition:opacity .3s}
+#tools.show,#tools.open,#tools:focus-within{opacity:1}
+#gear{font:500 13px/1 var(--font);color:#c9ced8;background:rgba(20,22,30,.82);border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:9px 14px;cursor:pointer}
+#gear:hover{color:#fff}
+#settings{min-width:330px;padding:14px 16px 10px;border-radius:16px;background:rgba(16,18,24,.94);border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 20px 60px -20px rgba(0,0,0,.8);font:400 14px/1.3 var(--font);color:#c9ced8}
+#settings .row{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 10px}
+#settings kbd{font:400 11px/1 var(--mono);color:#8b919c;border:1px solid rgba(255,255,255,.2);border-radius:4px;padding:2px 5px;margin-left:4px}
+#settings .seg2{display:flex;border:1px solid rgba(255,255,255,.16);border-radius:999px;overflow:hidden}
+#settings .seg2 button{font:500 13px/1 var(--font);color:#c9ced8;background:none;border:0;padding:8px 12px;cursor:pointer}
+#settings .seg2 button+button{border-left:1px solid rgba(255,255,255,.12)}
+#settings .seg2 button[aria-pressed="true"]{background:#57caff;color:#0b0c0f}
+#settings .hint{margin:4px 0 0;font:300 12px/1.3 var(--mono);color:#8b919c}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:7;font:400 15px/1.3 var(--font);color:var(--tx);
+  background:rgba(20,22,30,.92);border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:12px 18px}
+
+/* ---------- lite mode: flat, still, cheap ---------- */
+body.lite *,body.lite *::before,body.lite *::after{animation:none !important;transition:none !important}
+body.lite .grain,body.lite .vignette,body.lite svg.edge .run,body.lite .badge::after,body.lite .arr::before{display:none}
+body.lite .panel{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(14,16,22,.94)}
+body.lite .panel::after{display:none}
+body.lite .panel.ghost{background:transparent}
+body.lite .tilt{transform:none !important}
+body.lite .rig,body.lite .slide.past .rig{transform:none;filter:none}
+body.lite .z1,body.lite .z2,body.lite .z3,body.lite .z1[data-s].on,body.lite .z2[data-s].on{transform:none}
+body.lite [data-s]{filter:none;transform:none}
+body.lite .say .w{filter:none;transform:none}
+body.lite .box{box-shadow:none} body.lite .box.solid,body.lite .label{box-shadow:none}
+body.lite .big .face{filter:none} body.lite .extrude>span:not(.face){display:none}
+body.lite .kicker::before,body.lite .list>li::before{box-shadow:none} body.lite .hl::before{box-shadow:none}
+body.lite #gl.still{filter:saturate(.9)}
+
+/* warm-up pass at load: every slide gets painted once so the first visit doesn't stall */
+.slide.warm{visibility:visible;opacity:.001 !important;transition:none !important}.slide.warm .rig{transition:none !important}
+body.booting .slide:not(.warm){opacity:0 !important;transition:none !important}
+body.booting #tools{display:none}
+
+/* ---------- light theme: the stage is inverted with hue kept, so every hand-set color follows;
+   photos, logos and QR codes are inverted back. The WebGL background turns light in scene.js ---------- */
+body.light{background:#eef0f4}
+body.light #stage{filter:invert(1) hue-rotate(180deg)}
+body.light #stage img:not(.badge img),body.light #stage .badge,body.light #stage .qrwrap{filter:invert(1) hue-rotate(180deg)}
+body.light .vignette{display:none}
+body.light .grain{opacity:.035}
+body.light.nogl{background:#eef0f4}

@@ -1,0 +1,64 @@
+{
+  "review": {
+    "summary": "The analytics feature adds several security-relevant defects: an admin JWT is written to logs on every view request, the visitor key is taken from the request body (dedup bypass / analytics poisoning), CSV export is vulnerable to formula injection, the new public view endpoint has no rate limit, and the top-viewed search builds a raw regex from user input. At least one CRITICAL finding, so changes are requested.",
+    "findings": [
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 708,
+        "end_line": 708,
+        "severity": "CRITICAL",
+        "category": "security",
+        "title": "Admin JWT written to logs on every view request",
+        "rationale": "`console.log('[analytics] auth header:', req.headers.authorization)` logs the full `Authorization: Bearer <jwt>` header. Attacker input: any request to `POST /api/blog/:blogId/view` carrying an Authorization header (or an admin simply opening a public blog post while logged in). Achieves: the admin JWT is persisted in server/aggregator logs; anyone with log read access can replay it for full admin access. Violates AC-10.2 (authorization headers/tokens shall never be written to logs).",
+        "suggestion": "Remove the console.log entirely; if diagnostics are needed, log only a boolean such as `isAdminView` or a truncated hash, never the header value."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 577,
+        "end_line": 584,
+        "severity": "CRITICAL",
+        "category": "security",
+        "title": "CSV export is vulnerable to spreadsheet formula injection",
+        "rationale": "`escapeCSV` only quotes cells containing `,`, `\"` or newline; it never prefixes cells starting with `=`, `+`, `-` or `@`. Attacker input: a blog title/category such as `=HYPERLINK(\"http://evil\",\"x\")` or `=cmd|' /C calc'!A0` (title is user-controlled via the blog create/edit flow). Achieves: when an admin exports the CSV and opens it in Excel/Sheets, the cell is evaluated as a formula, enabling data exfiltration or command execution. AC-5.6 explicitly requires prefixing such cells with a single quote.",
+        "suggestion": "In `escapeCSV`, after stringifying, if the first character is `=`, `+`, `-` or `@`, prefix with `'` before applying quote/escape handling."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 655,
+        "end_line": 655,
+        "severity": "CRITICAL",
+        "category": "security",
+        "title": "Visitor key is taken from the request body, bypassing deduplication",
+        "rationale": "`const visitorKey = req.body?.visitorKey` lets the client choose the dedup key. Attacker input: repeated `POST /api/blog/:blogId/view` calls each with a fresh random `visitorKey`. Achieves: the 24h dedup check never matches, so view counts are inflated arbitrarily and analytics are poisoned; it also allows unbounded document creation. AC-6.3 requires the key to be derived on the server (`sha256(ip + user-agent)` or `sha256(X-Visitor-ID)`), and the body shall not be able to set it. Note the server-side `computeVisitorKey` in `server/src/utils/viewTracking.js` already exists but is not used here.",
+        "suggestion": "Ignore `req.body.visitorKey`; derive the key server-side via `computeVisitorKey(req)` (or equivalent) and use that for the dedup lookup and document creation."
+      },
+      {
+        "file": "server/src/routes/blogRoutes.js",
+        "start_line": 24,
+        "end_line": 24,
+        "severity": "CRITICAL",
+        "category": "security",
+        "title": "Public view endpoint has no rate limit",
+        "rationale": "`blogRouter.post('/:blogId/view', recordView)` is unauthenticated and has no limiter, unlike the adjacent comment/generate routes. Attacker input: a high-volume stream of unauthenticated POSTs to `/api/blog/:blogId/view`. Achieves: each request performs a DB lookup and write, enabling write flooding/DoS and view-count inflation. AC-6.7 requires a dedicated 30 requests/minute per-IP limit on this endpoint.",
+        "suggestion": "Add a dedicated `viewLimiter` (30 req/min per IP) to the route, e.g. `blogRouter.post('/:blogId/view', viewLimiter, recordView)`."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 360,
+        "end_line": 360,
+        "severity": "WARNING",
+        "category": "security",
+        "title": "User-supplied regex in top-viewed search enables ReDoS / regex injection",
+        "rationale": "`blogFilter.title = { $regex: req.query.search, $options: 'i' }` passes the raw query string into a MongoDB regex without escaping or validation (`validateAnalyticsQuery` does not check `search`). Attacker input: `?search=(a+)+$` or `?search=.*`. Achieves: catastrophic backtracking (ReDoS) against the database and arbitrary regex matching; free-text search is also explicitly out of scope per spec §11.",
+        "suggestion": "Escape the input (e.g. `escapeRegExp(req.query.search)`) and bound its length, or remove the search branch since search is out of scope for this PR."
+      }
+    ],
+    "verdict": "request_changes"
+  },
+  "model": "deepseek/deepseek-v4.1-flash",
+  "tokensIn": 84640,
+  "tokensOut": 13866,
+  "costUsd": 0.011693564,
+  "ms": 69930,
+  "recordedAt": "2026-11-21T08:29:39.712Z"
+}

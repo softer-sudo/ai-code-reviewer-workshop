@@ -1,0 +1,932 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Build your own AI code reviewer · Workshop</title>
+<link rel="stylesheet" href="deck.css">
+<link rel="stylesheet" href="talk.css">
+<link rel="stylesheet" href="ws.css">
+</head>
+<body>
+<canvas id="gl" aria-hidden="true"></canvas>
+<div class="vignette"></div>
+<div class="grain"></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="gGoogle" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#57caff"/><stop offset=".33" stop-color="#5cdb6d"/>
+      <stop offset=".66" stop-color="#ffd427"/><stop offset="1" stop-color="#ff7daf"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<div id="viewport"><div id="stage">
+
+
+  <section class="slide" data-logo="1400 175 190 0" data-tint="mix" data-block="Opening" data-time="0:00–0:03" data-toc="Cover">
+    <div class="rig"><div class="tilt">
+      <div class="panel ghost" data-shape="cut-tl:540:196 notch-br:403:131" style="left:62px;top:66px;width:1474px;height:768px"></div>
+      <div class="badge z1" style="left:96px;top:80px"><img src="img/devfest-logo.png" alt="DevFest"><div class="loc">Warsaw</div></div>
+      <div class="abs z2" style="left:118px;top:290px;width:1100px">
+        <p class="kicker" style="--c:var(--yellow-h)">Workshop · DevFest Warsaw 2026 · Classroom</p>
+        <h1 class="title long" style="font-size:88px">Build your own<br><span class="shine">AI code reviewer</span></h1>
+        <div class="author"><b>Ivan Lapa</b>Senior Engineer (UI), Netflix<br>Independent AI Consultant</div>
+      </div>
+      <div class="gdgtext z1">Google<br>Developer<br>Groups</div>
+    </div></div>
+    <template class="notes"><p class="ua">Привітання. 45 хвилин, ~40 людей, у кожного ноутбук. Кажу одразу: ми будуємо, а не слухаємо. Усе, що треба скопіювати, є на слайдах з кнопкою Copy. Натисніть P, щоб бачити ці нотатки.</p><p class="say"><b>Say:</b> Welcome. In 45 minutes you will build an AI code reviewer that comments on a real pull request. Everything you need to copy has a Copy button.</p></template>
+  </section>
+
+  <section class="slide" data-logo="dock" data-tint="blue" data-block="Opening" data-time="0:00–0:03" data-toc="Disclaimer">
+    <div class="rig"><div class="tilt">
+      <div class="panel" data-shape="notch-br:403:131" style="left:62px;top:66px;width:1474px;height:768px"></div>
+<div class="abs z1" style="left:120px;top:120px;width:1150px">
+        <p class="kicker" style="--c:var(--red-h)">Before we start</p>
+        <h2 class="h">Disclaimer</h2>
+        <p class="body" style="font-size:32px;max-width:44ch;margin-top:32px">DevDigest is a personal open-source tool built for educational purposes, not affiliated with Netflix.</p>
+        <p class="body" style="font-size:32px;max-width:44ch;margin-top:20px;color:var(--tx2)">All views in this workshop are my own and do not represent Netflix.</p>
+        <p class="body" style="font-size:23px;max-width:84ch;margin-top:34px;color:var(--tx2)">Results for CodeRabbit, Greptile, Claude, Codex and other tools come from my own runs on a demo PR. They are subjective and may not reflect how these tools work for you.</p>
+        <p class="body" style="font-size:23px;max-width:84ch;margin-top:12px;color:var(--tx2)">Prices are public list prices as of November 2026. Your plan, discounts or contract terms may differ.</p>
+      </div>
+      <div class="gdgtext z1">Google<br>Developer<br>Groups</div>
+      <div class="foot"><b></b><span>Opening</span></div>
+    </div></div>
+    <template class="notes"><p class="ua">Дисклеймер без змін із доповіді: інструмент особистий, відкритий, освітній; погляди мої.</p><p class="say"><b>Say:</b> This is a personal open-source project, built for education. Views are my own.</p></template>
+  </section>
+
+  <section class="slide" data-logo="dock" data-tint="mix" data-block="Opening" data-time="0:00–0:03" data-toc="About me">
+    <div class="rig"><div class="tilt">
+      <div class="panel" data-shape="notch-br:403:131" style="left:62px;top:66px;width:1474px;height:768px"></div>
+<div class="abs z2" style="left:141px;top:132px"><img class="me-photo" src="img/ivan.jpg" alt="Ivan Lapa"></div>
+      <div class="abs z1" style="left:620px;top:82px;width:860px">
+        <p class="kicker" style="--c:var(--yellow-h)">About me</p>
+        <h2 class="h" style="margin:0">Ivan Lapa</h2>
+        <div class="me-rows">
+          <div class="me-row" style="--c:var(--blue-h)"><span>Now</span><p>Senior Engineer (UI) at Netflix<br>Independent AI consultant</p></div>
+          <div class="me-row" style="--c:var(--green-h)"><span>Before</span><p>Engineer and team lead at unicorn companies DataRobot, Gelato</p></div>
+          <div class="me-row" style="--c:var(--yellow-h)"><span>AI</span><p>Developing AI tools since 2019: data preparation and feature discovery<br>Using AI engineering tools daily since early 2024<br>5+ AI products in daily use at printing companies, 2 autonomous agents</p></div>
+          <div class="me-row" style="--c:var(--red-h)"><span>Off work</span><p>Ironman full-distance finisher<br>Enduro, rally, ultra-distance cycling</p></div>
+        </div>
+      </div>
+      <div class="gdgtext z1">Google<br>Developer<br>Groups</div>
+      <div class="foot"><b></b><span>Opening</span></div>
+    </div></div>
+    <template class="notes"><p class="ua">Про мене, 20–30 секунд. Netflix лише як місце роботи, без його процесів і команд. Консалтинг і всі приклади тут з особистих проєктів.</p><p class="say"><b>Say:</b> I am Ivan: a UI engineer at Netflix and an independent AI consultant. Everything you will see today comes from my personal open-source projects.</p></template>
+  </section>
+
+  <section class="slide" data-logo="dock" data-tint="mix" data-block="Opening" data-time="0:00–0:03" data-toc="What we build and why">
+    <div class="rig"><div class="tilt">
+      <div class="panel" data-shape="notch-br:403:131" style="left:62px;top:66px;width:1474px;height:768px"></div>
+<div class="abs z1" style="left:120px;top:108px;width:1350px;--c:var(--green-h)"><p class="kicker">The goal · 45 minutes from now</p><h2 class="h" style="margin:0;font-size:54px">A reviewer that <em>blocks a bad PR</em></h2></div>
+      <div class="abs z2 " style="left:141px;top:262px;width:560px;"><div class="stack">
+        <div class="card ac" style="--c:var(--green-h);"><p class="lbl2">What</p><h3>Your own AI code reviewer</h3><p>It comments on a real pull request and turns the check red.</p></div>
+        <div class="card" style=""><p class="lbl2">Why build it yourself</p><h3>You see every stage</h3><p>So you know what to trust: the model is one stage, the rest is plain code.</p></div>
+        <div class="card" style=""><p class="lbl2">Who decides</p><h3>A human merges</h3><p>The reviewer only advises.</p></div>
+      </div></div>
+      <div class="abs win pr z2" style="left:741px;top:262px;width:718px">
+        <div class="bar"><i style="background:var(--red)"></i><i style="background:var(--yellow)"></i><i style="background:var(--green)"></i><span style="margin-left:12px">your fork · pull request</span><span class="st" style="color:var(--red-h)">● Open</span></div>
+        <div class="body-in">
+          <div class="t">feat: post analytics dashboard</div>
+          <div class="chk"><span>✓ build</span><span>✓ tests</span><span style="color:var(--red-h);background:rgba(255,125,175,.1);border-color:rgba(255,125,175,.45)">✗ AI review</span></div>
+          <div class="win mini" style="border-color:rgba(255,125,175,.4)"><div class="bar"><span>inline comment · file:lines</span><b class="rid" style="background:var(--red-h)">CRITICAL</b></div>
+            <pre>Rationale: why this breaks.
+Suggestion: how to fix it.</pre></div>
+          <div class="meta">Merge: waiting for a human</div>
+        </div>
+      </div>
+      <div class="abs z1" style="left:741px;top:668px;width:700px"><p class="src">Illustration, not real output</p></div>
+      <div class="gdgtext z1">Google<br>Developer<br>Groups</div>
+      <div class="foot"><b></b><span>Opening</span></div>
+    </div></div>
+    <template class="notes"><p class="ua">Що і навіщо. Показую кінцевий результат одразу: PR із зеленою збіркою, але червоною перевіркою AI review та inline-коментарями. Навіщо будувати самим: бачимо кожну ланку і знаємо, чому їй можна довіряти. Мердж робить людина.</p><p class="say"><b>Say:</b> By the end, a pull request in your own fork turns red with inline comments, and a human still decides to merge.</p></template>
+  </section>
+
+  <section class="slide" data-logo="dock" data-tint="blue" data-block="Opening" data-time="0:00–0:03" data-toc="How it fits together">
+    <div class="rig"><div class="tilt">
+      <div class="panel" data-shape="notch-br:403:131" style="left:62px;top:66px;width:1474px;height:768px"></div>
+<div class="abs z1" style="left:120px;top:108px;width:1350px;--c:var(--blue-h)"><p class="kicker">The plan · four steps</p><h2 class="h" style="margin:0;font-size:54px">Seven stages. <em>One</em> of them is the model.</h2></div>
+      <div class="abs z2 " style="left:141px;top:284px;width:1318px;"><div class="map">
+        <div class="mn given"><b>PR diff</b><small>input</small></div><div class="mn"><b>Context</b><small>repo + spec</small></div><div class="mn"><b>Prompt</b><small>rules</small></div><div class="mn ai"><i>the only AI call</i><b>Model</b><small>OpenRouter</small></div><div class="mn"><b>Grounding</b><small>in the diff?</small></div><div class="mn"><b>Gate</b><small>count blockers</small></div><div class="mn"><b>Inline review</b><small>on GitHub</small></div>
+        <div class="br" tabindex="0" style="grid-column:1;--c:#e8eaed"><b>Given</b><span>A real pull request</span></div>
+        <div class="br" tabindex="0" style="grid-column:2;--c:var(--green-h)"><b>Step 2</b><span>Repository context</span></div>
+        <div class="br" tabindex="0" style="grid-column:3/6;--c:var(--blue-h)"><b>Step 1</b><span>Findings you can trust</span></div>
+        <div class="br" tabindex="0" style="grid-column:6/8;--c:var(--yellow-h)"><b>Step 3</b><span>Gate + GitHub Action</span></div>
+        <div class="br" tabindex="0" style="grid-column:3/5;grid-row:3;--c:var(--red-h)"><b>Step 4</b><span>More reviewers, ×N</span></div>
+      </div></div>
+      <div class="gdgtext z1">Google<br>Developer<br>Groups</div>
+      <div class="foot"><b></b><span>Opening</span></div>
+    </div></div>
+    <template class="notes"><p class="ua">Це схема всього воркшопу: сім ланок зліва направо. Модель — лише одна з них, решту (контекст, перевірка, гейт, публікація) робить звичайний код. Під ланками видно, який крок яку ланку будує: крок 1 — Prompt, Model, Grounding; крок 2 — Context; крок 3 — Gate і публікація; крок 4 — кілька рев’юерів на тому самому конвеєрі. Ця ж схема стоїть угорі кожного кроку, з підсвіченою ланкою. Таймінг: Setup 4 хв, крок 1 — 8, крок 2 — 8, крок 3 — 9, крок 4 — 7, показ і завершення — 6. Кожен крок: пояснюю, вони будують агентом за промптом і специфікацією, перевіряють тестами. Якщо відстаємо, крок 4 скорочуємо до демо.</p><p class="say"><b>Say:</b> The model is one box out of seven. The other six are plain code, and that is where trust comes from. You will see this map on every step.</p></template>
+  </section>
+
+  <section class="slide" data-logo="dock" data-tint="green" data-block="Opening" data-time="0:00–0:03" data-toc="Meet QuickBlog">
+    <div class="rig"><div class="tilt">
+      <div class="panel" data-shape="notch-br:403:131" style="left:62px;top:66px;width:1474px;height:768px"></div>
+<div class="abs z1" style="left:120px;top:108px;width:1350px;--c:var(--green-h)"><p class="kicker">The app · QuickBlog</p><h2 class="h" style="margin:0;font-size:54px">A small blog platform. <em>This is what we review.</em></h2></div>
+      <div class="abs z2 " style="left:141px;top:262px;width:800px;"><div class="win vid"><div class="bar"><i style="background:var(--red)"></i><i style="background:var(--yellow)"></i><i style="background:var(--green)"></i><span style="margin-left:10px">QuickBlog · write, publish, comment, moderate</span></div><video src="media/quick-demo-loop.mp4" autoplay loop muted playsinline preload="auto" aria-label="QuickBlog · write, publish, comment, moderate"></video></div></div>
+      <div class="abs z2 " style="left:981px;top:262px;width:478px;"><div class="stack">
+        <div class="card" style=""><p class="lbl2">Site</p><h3>Stories, search, comments</h3></div>
+        <div class="card" style=""><p class="lbl2">Admin</p><h3>Write, publish, moderate</h3></div>
+        <div class="card ac" style="--c:var(--green-h);"><p class="lbl2">Analytics</p><h3>Views, trends, day drill-down</h3></div>
+      </div></div>
+      <div class="gdgtext z1">Google<br>Developer<br>Groups</div>
+      <div class="foot"><b></b><span>Opening</span></div>
+    </div></div>
+    <template class="notes"><p class="ua">Коротко знайомимо з цільовим застосунком QuickBlog: сайт зі статтями й коментарями та адмінка. У ролику: створюємо блог, публікуємо, лишаємо коментар і схвалюємо його. Analytics лише згадуємо, її покажемо на наступному слайді. Не затримуємось: це лише контекст для PR.</p><p class="say"><b>Say:</b> This is QuickBlog, the app we review. A site with stories and comments, and an admin to write and moderate. Nothing more to learn here, it is just the target.</p></template>
+  </section>
+
+  <section class="slide" data-logo="dock" data-tint="green" data-block="Opening" data-time="0:00–0:03" data-toc="The target">
+    <div class="rig"><div class="tilt">
+      <div class="panel" data-shape="notch-br:403:131" style="left:62px;top:66px;width:1474px;height:768px"></div>
+<div class="abs z1" style="left:120px;top:108px;width:1350px;--c:var(--green-h)"><p class="kicker">The target · QuickBlog · a public demo PR</p><h2 class="h" style="margin:0;font-size:54px">We are going to review <em>this pull request</em></h2></div>
+      <div class="abs z2 " style="left:141px;top:236px;width:860px;"><div class="win vid"><div class="bar"><i style="background:var(--red)"></i><i style="background:var(--yellow)"></i><i style="background:var(--green)"></i><span style="margin-left:10px">QuickBlog · analytics</span></div><video src="media/analytics-demo-loop.mp4" autoplay loop muted playsinline preload="auto" aria-label="QuickBlog · analytics"></video></div></div>
+      <div class="abs z2 " style="left:1051px;top:228px;width:408px;"><div class="stat" style="--c:var(--green-h);font-size:112px">28</div>
+        <p class="statcap" style="font-size:24px;margin-top:4px">planted defects <span class="tx2">+ 3 traps</span></p>
+        <div class="stack" style="gap:10px;margin-top:18px">
+          <div class="card" style="padding:12px 18px 14px"><p class="lbl2">In the diff</p><h3>Bugs you can point at</h3></div>
+          <div class="card ac" style="--c:var(--green-h);padding:12px 18px 14px"><p class="lbl2">Only against the spec</p><h3>Bugs with no line</h3><p><code>POST /view</code> is never called.</p></div>
+        </div>
+        <p class="src" style="margin-top:14px">Same PR as in the talk.</p></div>
+      <div class="gdgtext z1">Google<br>Developer<br>Groups</div>
+      <div class="foot"><b></b><span>Opening</span></div>
+    </div></div>
+    <template class="notes"><p class="ua">Це той самий PR із доповіді: 28 підкладених дефектів і 3 пастки. Частину видно в diff, частину видно лише порівнянням зі специфікацією. Саме це ми й відтворимо.</p><p class="say"><b>Say:</b> Same PR as the talk. Defects are planted by hand, so we can count what each reviewer catches.</p></template>
+  </section>
+
+  <section class="slide" data-logo="dock" data-tint="blue" data-block="Opening" data-time="0:00–0:03" data-toc="Branches = checkpoints">
+    <div class="rig"><div class="tilt">
+      <div class="panel" data-shape="notch-br:403:131" style="left:62px;top:66px;width:1474px;height:768px"></div>
+<div class="abs z1" style="left:120px;top:108px;width:1350px;--c:var(--blue-h)"><p class="kicker">How the repo is organised</p><h2 class="h" style="margin:0;font-size:54px">Every step has a <em>checkpoint branch</em></h2></div>
+      <div class="abs z2 " style="left:141px;top:272px;width:1318px;"><div class="pipe ladder"><div class="pst on" style="--c:#e8eaed">main<small>start</small></div><span class="pa"></span><div class="pst on" style="--c:var(--blue-h)">step-1-findings<small>after step 1</small></div><span class="pa"></span><div class="pst on" style="--c:var(--green-h)">step-2-context<small>after step 2</small></div><span class="pa"></span><div class="pst on" style="--c:var(--yellow-h)">step-3-gate-action<small>after step 3</small></div><span class="pa"></span><div class="pst on" style="--c:var(--red-h)">step-4-more-reviewers<small>after step 4</small></div><span class="pa"></span><div class="pst on" style="--c:#e8eaed">final<small>everything</small></div></div></div>
+      <div class="abs z2 " style="left:141px;top:400px;width:1318px;"><div class="grid2">
+        <div class="card" style=""><p class="lbl2">The rule</p><h3>Step N starts where step N−1 ended</h3><p>The start command is on every “Your turn” slide.</p></div>
+        <div class="card ac" style="--c:var(--red-h)"><p class="lbl2">Fell behind?</p><h3>Jump to the solution</h3><div class="cmd nocp"><span class="pf">$</span><code>git stash && git checkout &lt;branch&gt;</code></div><p style="margin-top:12px">The exact command is the <b>Lost?</b> line on each step.</p></div>
+      </div></div>
+      <div class="gdgtext z1">Google<br>Developer<br>Groups</div>
+      <div class="foot"><b></b><span>Opening</span></div>
+    </div></div>
+    <template class="notes"><p class="ua">Гілки — це контрольні точки. main — старт; step-N-* — готове рішення кроку N; final — повна функціональність; stretch/mcp — MCP-інструмент. Старт кроку N дорівнює готовому кроку N-1. Якщо відстали — git stash && git checkout потрібної гілки (точна команда є в Lost? на слайді кроку).</p><p class="say"><b>Say:</b> Every step has a solution branch. If you fall behind, stash and check out the branch of the step you missed.</p></template>
+  </section>
+
+  <section class="slide" data-logo="dock" data-tint="blue" data-block="Setup" data-time="0:03–0:07" data-toc="Initial setup">
+    <div class="rig"><div class="tilt">
+      <div class="panel" data-shape="notch-br:403:131" style="left:62px;top:66px;width:1474px;height:768px"></div>
+<div class="abs z1" style="left:120px;top:108px;width:1350px;--c:var(--green-h)"><p class="kicker">Setup · 4 min · do it with me</p><h2 class="h" style="margin:0;font-size:54px">Initial setup: <em>get the application running!</em></h2></div>
+      <div class="abs z2 turn setup" style="left:141px;top:250px;width:1318px;">
+        <div class="trow "><span class="stepn" style="--c:var(--green-h)">1</span><div class="tl"><b>Use this template</b><small>all branches · same name · Public</small></div><div class="cmd url"><code>https://github.com/burnjohn/ai-code-reviewer-workshop/generate</code></div></div>
+        <div class="trow "><span class="stepn" style="--c:var(--green-h)">2</span><div class="tl"><b>Clone</b><small>or open a Codespace</small></div><div class="cmd "><span class="pf">$</span><code>git clone https://github.com/&lt;you&gt;/ai-code-reviewer-workshop &amp;&amp; cd ai-code-reviewer-workshop</code></div></div>
+        <div class="trow "><span class="stepn" style="--c:var(--green-h)">3</span><div class="tl"><b>Add the key</b><small>key in the chat, into .env</small></div><div class="cmd "><span class="pf">$</span><code>cp .env.example .env</code></div></div>
+        <div class="trow "><span class="stepn" style="--c:var(--green-h)">4</span><div class="tl"><b>Install</b></div><div class="cmd "><span class="pf">$</span><code>npm ci</code></div></div>
+        <div class="trow "><span class="stepn" style="--c:var(--green-h)">5</span><div class="tl"><b>Smoke test</b><small>offline, a recorded answer</small></div><div class="cmd "><span class="pf">$</span><code>npm run review:mock</code></div></div>
+        <div class="trow "><span class="stepn" style="--c:rgba(255,255,255,.55)">+</span><div class="tl"><b>Optional</b><small>prefer clicking? open the UI</small></div><div class="cmd "><span class="pf">$</span><code>npm run ui</code></div></div>
+      </div>
+      <div class="gdgtext z1">Google<br>Developer<br>Groups</div>
+      <div class="foot"><b></b><span>Setup</span></div>
+    </div></div>
+    <template class="notes"><p class="ua">Чотири хвилини. Усі команди копіюються кнопкою Copy. Після clone одразу cd у папку (команда вже з cd). Template: галочка Include all branches, назву ai-code-reviewer-workshop не змінюємо і лишаємо Public — CI на кроці 3 бере рев’юер саме з <you>/ai-code-reviewer-workshop (не перейменовуємо). Ключ OpenRouter — у чаті; вставляємо у .env після OPENROUTER_API_KEY=, не комітимо. Перевірка: review:mock має завершитись без помилок — це офлайн-запуск із записаною відповіддю моделі. Хто застряг — Codespace. Необов’язково: npm run ui відкриває локальний UI на localhost:3000 для тих, хто воліє клікати.</p><p class="say"><b>Say:</b> Copy each command with its button. The key is in the chat. If review:mock prints findings, you are ready.</p></template>
+  </section>
+
+  <section class="slide" data-logo="dock" data-tint="blue" data-block="1 · Findings" data-time="0:07–0:09" data-toc="Step 1 · Findings you can trust">
+    <div class="rig"><div class="tilt">
+      <div class="panel" data-shape="notch-br:403:131" style="left:62px;top:66px;width:1474px;height:768px"></div>
+<div class="abs z1" style="left:120px;top:100px;width:1350px;--c:var(--blue-h)"><p class="stepbig"><b>Step 1</b><span>of 4 · Findings you can trust · 8 min</span></p><h2 class="h" style="margin:0;font-size:50px">Shape the findings, <em>check them against the diff</em></h2></div>
+      <div class="abs z2 " style="left:141px;top:250px;width:1318px;"><div class="pipe" style="--c:var(--blue-h)"><div class="pst">PR diff<small>input</small></div><span class="pa"></span><div class="pst">Context<small>repo + spec</small></div><span class="pa"></span><div class="pst on">Prompt<small>rules</small></div><span class="pa"></span><div class="pst on">Model<small>OpenRouter</small></div><span class="pa"></span><div class="pst on">Grounding<small>in the diff?</small></div><span class="pa"></span><div class="pst">Gate<small>count blockers</small></div><span class="pa"></span><div class="pst">Inline review<small>on GitHub</small></div></div></div>
+      <div class="abs z2 " style="left:141px;top:340px;width:1318px;"><div class="xrows" style="--c:var(--blue-h)">
+        <div class="xr "><p class="lbl2">The problem</p><div><h3>Models invent locations</h3><p>One comment on a line outside the diff, and GitHub rejects the whole review.</p></div></div>
+        <div class="xr ac"><p class="lbl2">What we build</p><div><h3>A typed finding + a grounding check</h3><p><code>json_schema</code> gives every finding a file, lines and a severity. Code drops what is not in the diff.</p></div></div>
+        <div class="xr "><p class="lbl2">What you will see</p><div><h3>Severities and DROPPED lines</h3><p>Every dropped finding prints its reason in your terminal.</p></div></div>
+      </div></div>
+      <div class="gdgtext z1">Google<br>Developer<br>Groups</div>
+      <div class="foot"><b></b><span>1 · Findings</span></div>
+    </div></div>
+    <template class="notes"><p class="ua">Фаза пояснення кроку 1 (~2 хв). Проблема: вільний текст не прив’язати до рядка, а модель вигадує місця. Рішення: json_schema, три правила в промпті (шкала severity, семантика verdict, дисципліна findings) і перевірка в коді: finding поза diff відкидаємо з причиною.</p><p class="say"><b>Say:</b> Do not trust the model, check its output. Every finding gets a shape, and a finding that points outside the diff is dropped with a reason.</p></template>
+  </section>
+
+  <section class="slide" data-logo="dock" data-tint="blue" data-block="1 · Findings" data-time="0:09–0:15" data-toc="Your turn · Step 1">
+    <div class="rig"><div class="tilt">
+      <div class="panel" data-shape="notch-br:403:131" style="left:62px;top:66px;width:1474px;height:768px"></div>
+<div class="abs z1" style="left:120px;top:100px;width:1350px;--c:var(--blue-h)"><p class="stepbig"><b>Step 1</b><span>your turn · about 6 min</span></p><h2 class="h" style="margin:0;font-size:50px">Your turn: <em>findings you can trust</em></h2></div>
+      <div class="abs z2 turn" style="left:141px;top:244px;width:1318px;">
+        <div class="trow "><span class="stepn" style="--c:var(--blue-h)">1</span><div class="tl"><b>Start</b><small>the starting point</small></div><div class="cmd "><span class="pf">$</span><code>git checkout main</code></div></div>
+        <div class="trow two"><span class="stepn" style="--c:var(--blue-h)">2</span>
+          <div class="pcard" style="--c:var(--blue-h)">
+            <header><span><b>Prompt</b> · paste it into your coding agent</span></header>
+            <pre tabindex="0">Implement Step 1.
+Read specs/step-1-findings.md and follow it exactly.
+Do not change tests, fixtures or any other file.
+Verify: run `npm test -- schema grounding` until 10 passed.
+Then run `npm run review:mock` and show me the findings.</pre>
+          </div>
+          <div class="scard" style="--c:var(--blue-h)">
+            <header><span><b>Spec</b> · what the agent builds from</span></header>
+            <div class="sbody"><p class="sf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg><b>specs/step-1-findings.md</b></p><ol><li><b>The shape of a finding</b><code>src/schema.ts</code></li><li><b>The rules in the prompt</b><code>src/prompt.ts</code></li><li><b>The grounding check</b><code>src/grounding.ts</code></li></ol></div>
+            <footer>
+              <button type="button" class="sbtn main" data-spec="specs/step-1-findings.md" data-act="open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>Read</button>
+              <button type="button" class="sbtn" data-spec="specs/step-1-findings.md" data-act="copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>Copy</span></button>
+              <button type="button" class="sbtn" data-spec="specs/step-1-findings.md" data-act="download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>Download</button>
+            </footer>
+          </div>
+        </div>
+        <div class="trow "><span class="stepn" style="--c:var(--blue-h)">3</span><div class="tl"><b>Check</b><small>done when the tests pass</small></div><div class="chk"><div class="cmd "><span class="pf">$</span><code>npm test -- schema grounding</code></div><span class="pa"></span><span class="exp">10 passed</span></div></div>
+      </div>
+      <div class="abs z2 stuck" style="left:141px;top:700px;width:950px;"><div class="tl"><b>Stuck?</b><small>take the finished step</small></div><div style="flex:1;min-width:0"><div class="cmd "><span class="pf">$</span><code>git stash &amp;&amp; git checkout step-1-findings</code></div></div></div>
+      <template class="spec-data" data-file="specs/step-1-findings.md" data-gh="https://github.com/burnjohn/ai-code-reviewer-workshop/blob/main/specs/step-1-findings.md"><div class="html md"><h2>Step 1 · Findings you can trust</h2>
+<p><b>Goal.</b> The model answers with a typed object, and every finding is checked against the diff before anyone sees it. <b>Why.</b> The schema is the contract between model and code. Models hallucinate locations, and a comment on a line outside the diff cannot even be posted.</p>
+<h3>What to build</h3>
+<h4>1. The shape of a finding · <code>src/schema.ts</code></h4>
+<ul><li>Add five fields to <code>FindingSchema</code>, after <code>end_line</code>: <code>severity</code> (<code>Severity</code>), <code>category</code> (<code>z.enum</code> of <code>security</code>, <code>correctness</code>, <code>performance</code>, <code>spec</code>, <code>maintainability</code>), <code>title</code>, <code>rationale</code>, <code>suggestion</code>.</li><li><code>title</code>, <code>rationale</code> and <code>suggestion</code> are strings with <code>.describe()</code>. <code>suggestion</code> is <code>''</code> when there is none.</li><li>Replace the temporary <code>Finding</code> and <code>Review</code> types with <code>z.infer</code> of their schemas.</li></ul>
+<h4>2. The rules in the prompt · <code>src/prompt.ts</code></h4>
+<p>Replace the three TODO blocks and keep their headings.</p>
+<ul><li><code>SEVERITY_RUBRIC</code>: one concrete line each for CRITICAL, WARNING, SUGGESTION.</li><li><code>VERDICT_SEMANTICS</code>: <code>request_changes</code> = at least one CRITICAL, <code>comment</code> = only WARNING/SUGGESTION, <code>approve</code> = no findings.</li><li><code>FINDINGS_DISCIPLINE</code>: only added or changed lines, cite NEW-side line numbers as printed, one finding per root cause, zero findings is valid.</li><li>Do not touch <code>INJECTION_GUARD</code> or <code>wrapUntrusted</code>.</li></ul>
+<h4>3. The grounding check · <code>src/grounding.ts</code></h4>
+<p>Implement <code>groundFindings(findings, diff)</code>. Use <code>buildLineIndex(diff)</code>, which is already written.</p>
+<ul><li>The file is not in the index → dropped, reason <code>file '&lt;path&gt;' is not in the diff</code>.</li><li><code>lo</code> / <code>hi</code> = min / max of <code>start_line</code> and <code>end_line</code>. No line of <code>lo..hi</code> is in the index → dropped, reason <code>lines &lt;lo&gt;-&lt;hi&gt; do not touch any hunk in '&lt;path&gt;'</code>.</li><li>Otherwise kept.</li></ul>
+<h3>Constraints</h3>
+<ul><li>Do not change tests, fixtures or any other file.</li></ul>
+<h3>Acceptance</h3>
+<ol><li>WHEN a finding has an unknown category or no severity, the schema SHALL reject it.</li><li>WHEN a finding's file is not in the diff, or its lines miss every hunk, the reviewer SHALL drop it with the exact reason above.</li><li>WHEN a range partly overlaps a hunk, or start is after end, the reviewer SHALL keep it.</li><li>WHEN the prompt is built, it SHALL contain no <code>TODO</code> and keep the injection guard.</li></ol>
+<h3>Done when</h3>
+<p><code>npm test -- schema grounding</code> → <code>10 passed</code> (full <code>npm test</code>: <code>23 failed | 22 passed</code>, those are steps 2–4).</p>
+<h3>Steps</h3>
+<ol><li><code>git checkout main</code></li><li>Paste the prompt into your coding agent.</li><li><code>npm test -- schema grounding</code></li><li><code>npm run review:mock</code> (or <code>npm run review</code> / <code>npm run ui</code>): no <code>undefined</code>; each <code>DROPPED</code> line has a reason.</li></ol></div><pre class="raw"># Step 1 · Findings you can trust
+
+**Goal.** The model answers with a typed object, and every finding is checked against the diff before anyone sees it.
+**Why.** The schema is the contract between model and code. Models hallucinate locations, and a comment on a line outside the diff cannot even be posted.
+
+## What to build
+
+### 1. The shape of a finding · `src/schema.ts`
+- Add five fields to `FindingSchema`, after `end_line`: `severity` (`Severity`), `category` (`z.enum` of `security`, `correctness`, `performance`, `spec`, `maintainability`), `title`, `rationale`, `suggestion`.
+- `title`, `rationale` and `suggestion` are strings with `.describe()`. `suggestion` is `''` when there is none.
+- Replace the temporary `Finding` and `Review` types with `z.infer` of their schemas.
+
+### 2. The rules in the prompt · `src/prompt.ts`
+Replace the three TODO blocks and keep their headings.
+- `SEVERITY_RUBRIC`: one concrete line each for CRITICAL, WARNING, SUGGESTION.
+- `VERDICT_SEMANTICS`: `request_changes` = at least one CRITICAL, `comment` = only WARNING/SUGGESTION, `approve` = no findings.
+- `FINDINGS_DISCIPLINE`: only added or changed lines, cite NEW-side line numbers as printed, one finding per root cause, zero findings is valid.
+- Do not touch `INJECTION_GUARD` or `wrapUntrusted`.
+
+### 3. The grounding check · `src/grounding.ts`
+Implement `groundFindings(findings, diff)`. Use `buildLineIndex(diff)`, which is already written.
+- The file is not in the index → dropped, reason `file '&lt;path&gt;' is not in the diff`.
+- `lo` / `hi` = min / max of `start_line` and `end_line`. No line of `lo..hi` is in the index → dropped, reason `lines &lt;lo&gt;-&lt;hi&gt; do not touch any hunk in '&lt;path&gt;'`.
+- Otherwise kept.
+
+## Constraints
+- Do not change tests, fixtures or any other file.
+
+## Acceptance
+1. WHEN a finding has an unknown category or no severity, the schema SHALL reject it.
+2. WHEN a finding's file is not in the diff, or its lines miss every hunk, the reviewer SHALL drop it with the exact reason above.
+3. WHEN a range partly overlaps a hunk, or start is after end, the reviewer SHALL keep it.
+4. WHEN the prompt is built, it SHALL contain no `TODO` and keep the injection guard.
+
+## Done when
+`npm test -- schema grounding` → `10 passed` (full `npm test`: `23 failed | 22 passed`, those are steps 2–4).
+
+## Steps
+1. `git checkout main`
+2. Paste the prompt into your coding agent.
+3. `npm test -- schema grounding`
+4. `npm run review:mock` (or `npm run review` / `npm run ui`): no `undefined`; each `DROPPED` line has a reason.
+
+## Prompt
+```text
+Implement Step 1.
+Read specs/step-1-findings.md and follow it exactly.
+Do not change tests, fixtures or any other file.
+Verify: run `npm test -- schema grounding` until 10 passed.
+Then run `npm run review:mock` and show me the findings.
+```
+
+## Start from
+`git checkout main`
+
+## Lost?
+`git stash &amp;&amp; git checkout step-1-findings`
+</pre></template>
+      <div class="gdgtext z1">Google<br>Developer<br>Groups</div>
+      <div class="foot"><b></b><span>1 · Findings</span></div>
+    </div></div>
+    <template class="notes"><p class="ua">Практика кроку 1 (~5-6 хв). Три дії: команда старту, короткий промпт у свого агента, перевірка тестами. Поруч із промптом окремий блок специфікації: Read відкриває її в модальному вікні, Copy і Download віддають markdown. Уся інструкція живе у специфікації, промпт лише відсилає до неї агента. Stuck? — стрибок на готове рішення кроку. Після тестів: npm run review:mock — без undefined, кожен DROPPED має причину.</p><p class="say"><b>Say:</b> Run the start command, paste the prompt into your coding agent, and stop when the check passes. Lost? jumps to the solution.</p><pre class="prompt" data-t="Step 1 · prompt">Implement Step 1.
+Read specs/step-1-findings.md and follow it exactly.
+Do not change tests, fixtures or any other file.
+Verify: run `npm test -- schema grounding` until 10 passed.
+Then run `npm run review:mock` and show me the findings.</pre><pre class="prompt" data-t="Step 1 · stuck: the finished step">git stash &amp;&amp; git checkout step-1-findings</pre></template>
+  </section>
+
+  <section class="slide" data-logo="dock" data-tint="blue" data-block="1 · Findings" data-time="0:09–0:15" data-toc="Result · kept or dropped">
+    <div class="rig"><div class="tilt">
+      <div class="panel" data-shape="notch-br:403:131" style="left:62px;top:66px;width:1474px;height:768px"></div>
+<div class="abs z1" style="left:120px;top:108px;width:1350px;--c:var(--blue-h)"><p class="kicker">Step 1 · what you should see</p><h2 class="h" style="margin:0;font-size:54px">Kept, or <em>dropped with a reason</em></h2></div>
+      <div class="abs z2 " style="left:141px;top:262px;width:1318px;"><div class="win mini"><div class="bar"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i><span>schematic · your terminal shows the same idea</span></div>
+          <div class="rows kd">
+            <div><span class="pill" style="--c:var(--red-h)">CRITICAL</span><span>file in diff · lines in diff</span><span style="color:var(--green-h)">kept → inline comment</span></div>
+            <div><span class="pill" style="--c:var(--yellow-h)">WARNING</span><span>file in diff · lines in diff</span><span style="color:var(--green-h)">kept → inline comment</span></div>
+            <div class="drop"><span class="pill" style="--c:var(--tx2)">DROPPED</span><span>file is not in the diff</span><span>reason printed</span></div>
+            <div class="drop"><span class="pill" style="--c:var(--tx2)">DROPPED</span><span>lines are outside the hunk</span><span>reason printed</span></div>
+          </div></div></div>
+      <div class="abs z2 " style="left:141px;top:590px;width:1100px;--c:var(--blue-h)"><p class="keyline">Code checks the model’s output, <em>not the model.</em></p></div>
+      <div class="gdgtext z1">Google<br>Developer<br>Groups</div>
+      <div class="foot"><b></b><span>1 · Findings</span></div>
+    </div></div>
+    <template class="notes"><p class="ua">Що вони мають побачити після кроку 1: у терміналі severities і рядки DROPPED із причиною. Схема ілюстративна, точний формат виводу — у їхньому репо.</p><p class="say"><b>Say:</b> This is why grounding matters: one invented line number can fail the whole review.</p></template>
+  </section>
+
+  <section class="slide" data-logo="dock" data-tint="green" data-block="2 · Context" data-time="0:15–0:17" data-toc="Step 2 · Repository context">
+    <div class="rig"><div class="tilt">
+      <div class="panel" data-shape="notch-br:403:131" style="left:62px;top:66px;width:1474px;height:768px"></div>
+<div class="abs z1" style="left:120px;top:100px;width:1350px;--c:var(--green-h)"><p class="stepbig"><b>Step 2</b><span>of 4 · Repository context · 8 min</span></p><h2 class="h" style="margin:0;font-size:50px">Give the reviewer <em>repository context</em></h2></div>
+      <div class="abs z2 " style="left:141px;top:250px;width:1318px;"><div class="pipe" style="--c:var(--green-h)"><div class="pst">PR diff<small>input</small></div><span class="pa"></span><div class="pst on">Context<small>repo + spec</small></div><span class="pa"></span><div class="pst">Prompt<small>rules</small></div><span class="pa"></span><div class="pst">Model<small>OpenRouter</small></div><span class="pa"></span><div class="pst">Grounding<small>in the diff?</small></div><span class="pa"></span><div class="pst">Gate<small>count blockers</small></div><span class="pa"></span><div class="pst">Inline review<small>on GitHub</small></div></div></div>
+      <div class="abs z2 " style="left:141px;top:340px;width:1318px;"><div class="xrows" style="--c:var(--green-h)">
+        <div class="xr "><p class="lbl2">The problem</p><div><h3>A missing call has no line</h3><p>The diff is only the changed lines. Nothing in it says the client never calls <code>POST /view</code>.</p></div></div>
+        <div class="xr ac"><p class="lbl2">What we build</p><div><h3><code>gatherContext()</code></h3><p>Project rules, the linked spec, full changed files and callers. Within a budget, wrapped as untrusted.</p></div></div>
+        <div class="xr "><p class="lbl2">What you will see</p><div><h3>The spec-only bugs show up</h3><p>Run it with and without <code>--no-context</code> and compare.</p></div></div>
+      </div></div>
+      <div class="gdgtext z1">Google<br>Developer<br>Groups</div>
+      <div class="foot"><b></b><span>2 · Context</span></div>
+    </div></div>
+    <template class="notes"><p class="ua">Пояснення кроку 2. Diff показує лише змінені рядки, тому дефект «клієнт ніколи не викликає POST /view» у diff не видно: немає рядка. Збираємо контекст у бюджеті токенів і загортаємо як недовірений (prompt injection).</p><p class="say"><b>Say:</b> The diff cannot show what is missing. Give the model the spec and the callers, within a budget, and mark all of it as untrusted.</p></template>
+  </section>
+
+  <section class="slide" data-logo="dock" data-tint="green" data-block="2 · Context" data-time="0:15–0:17" data-toc="The context ladder">
+    <div class="rig"><div class="tilt">
+      <div class="panel" data-shape="notch-br:403:131" style="left:62px;top:66px;width:1474px;height:768px"></div>
+<div class="abs z1" style="left:120px;top:108px;width:1350px;--c:var(--green-h)"><p class="kicker">Step 2 · how much context is enough</p><h2 class="h" style="margin:0;font-size:50px">Climb the ladder only as far as <em>the bug needs</em></h2></div>
+      <div class="abs z2 " style="left:141px;top:238px;width:1318px;--c:var(--green-h)"><div class="ladder2">
+        <div class="lr hd"><i></i><span>Rung</span><span>Tokens</span><span>Noise</span><span>Injection</span></div>
+        <div class="lr use"><i>1</i><b>Rules files<small>CLAUDE.md · AGENTS.md · README</small></b><span class="lv" data-v="1"><i></i><i></i><i></i><em>low</em></span><span class="lv" data-v="1"><i></i><i></i><i></i><em>low</em></span><span class="lv" data-v="1"><i></i><i></i><i></i><em>low</em></span></div><div class="lr use"><i>2</i><b>PR intent + linked spec<small>what it should do</small></b><span class="lv" data-v="1"><i></i><i></i><i></i><em>low</em></span><span class="lv" data-v="1"><i></i><i></i><i></i><em>low</em></span><span class="lv" data-v="2"><i></i><i></i><i></i><em>med</em></span></div><div class="lr use"><i>3</i><b>Full changed files<small>not just the hunks</small></b><span class="lv" data-v="2"><i></i><i></i><i></i><em>med</em></span><span class="lv" data-v="1"><i></i><i></i><i></i><em>low</em></span><span class="lv" data-v="2"><i></i><i></i><i></i><em>med</em></span></div><div class="lr"><i>4</i><b>Repo map<small>symbols and structure</small></b><span class="lv" data-v="2"><i></i><i></i><i></i><em>med</em></span><span class="lv" data-v="2"><i></i><i></i><i></i><em>med</em></span><span class="lv" data-v="1"><i></i><i></i><i></i><em>low</em></span></div><div class="lr use"><i>5</i><b>Callers<small>who uses the changed functions</small></b><span class="lv" data-v="2"><i></i><i></i><i></i><em>med</em></span><span class="lv" data-v="2"><i></i><i></i><i></i><em>med</em></span><span class="lv" data-v="1"><i></i><i></i><i></i><em>low</em></span></div><div class="lr"><i>6</i><b>Retrieval / embeddings<small>search the repo by meaning</small></b><span class="lv" data-v="3"><i></i><i></i><i></i><em>high</em></span><span class="lv" data-v="3"><i></i><i></i><i></i><em>high</em></span><span class="lv" data-v="2"><i></i><i></i><i></i><em>med</em></span></div><div class="lr"><i>7</i><b>Agentic tool use<small>the model reads the repo via tools / MCP</small></b><span class="lv" data-v="3"><i></i><i></i><i></i><em>high</em></span><span class="lv" data-v="3"><i></i><i></i><i></i><em>high</em></span><span class="lv" data-v="3"><i></i><i></i><i></i><em>high</em></span></div>
+      </div></div>
+      <div class="abs z2 " style="left:141px;top:716px;width:990px;"><p class="src"><b style="color:var(--green-h)">■ green</b> = the four rungs we build in step 2</p></div>
+      <div class="gdgtext z1">Google<br>Developer<br>Groups</div>
+      <div class="foot"><b></b><span>2 · Context</span></div>
+    </div></div>
+    <template class="notes"><p class="ua">Сходи контексту — від дешевого до дорогого. Кожен щабель додає токени, шум і поверхню для prompt injection. У кроці 2 ми беремо щаблі 1, 2, 3 і 5 (підсвічені зеленим). Репо-мапа, retrieval та агентний доступ — наступні рівні («What’s next»).</p><p class="say"><b>Say:</b> More context is not free: tokens, noise, and more text an attacker can write into. Climb only as far as the bug needs.</p></template>
+  </section>
+
+  <section class="slide" data-logo="dock" data-tint="green" data-block="2 · Context" data-time="0:17–0:23" data-toc="Your turn · Step 2">
+    <div class="rig"><div class="tilt">
+      <div class="panel" data-shape="notch-br:403:131" style="left:62px;top:66px;width:1474px;height:768px"></div>
+<div class="abs z1" style="left:120px;top:100px;width:1350px;--c:var(--green-h)"><p class="stepbig"><b>Step 2</b><span>your turn · about 6 min</span></p><h2 class="h" style="margin:0;font-size:50px">Your turn: <em>repository context</em></h2></div>
+      <div class="abs z2 turn" style="left:141px;top:244px;width:1318px;">
+        <div class="trow "><span class="stepn" style="--c:var(--green-h)">1</span><div class="tl"><b>Start</b><small>the end of step 1</small></div><div class="cmd "><span class="pf">$</span><code>git stash &amp;&amp; git checkout step-1-findings</code></div></div>
+        <div class="trow two"><span class="stepn" style="--c:var(--green-h)">2</span>
+          <div class="pcard" style="--c:var(--green-h)">
+            <header><span><b>Prompt</b> · paste it into your coding agent</span></header>
+            <pre tabindex="0">Implement Step 2.
+Read specs/step-2-context.md and follow it exactly.
+Do not change tests, src/source.ts or src/index.ts.
+Verify: run `npm test -- context` until 16 passed.
+Then run `npm run review:mock -- --dry-run`, show me the
+context log, and run it again with --no-context.</pre>
+          </div>
+          <div class="scard" style="--c:var(--green-h)">
+            <header><span><b>Spec</b> · what the agent builds from</span></header>
+            <div class="sbody"><p class="sf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg><b>specs/step-2-context.md</b></p><ol><li><b>Linked docs</b><code>extractLinkedDocs(body)</code></li><li><b>Changed symbols</b><code>extractSymbols(rawDiff)</code></li><li><b>Callers</b><code>findCallers(symbols, files, maxHits)</code></li><li><b>The budget</b><code>assembleContext(candidates, budget)</code></li><li><b>Putting it together</b><code>gatherContext(source, opts)</code></li></ol></div>
+            <footer>
+              <button type="button" class="sbtn main" data-spec="specs/step-2-context.md" data-act="open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>Read</button>
+              <button type="button" class="sbtn" data-spec="specs/step-2-context.md" data-act="copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>Copy</span></button>
+              <button type="button" class="sbtn" data-spec="specs/step-2-context.md" data-act="download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>Download</button>
+            </footer>
+          </div>
+        </div>
+        <div class="trow "><span class="stepn" style="--c:var(--green-h)">3</span><div class="tl"><b>Check</b><small>done when the tests pass</small></div><div class="chk"><div class="cmd "><span class="pf">$</span><code>npm test -- context</code></div><span class="pa"></span><span class="exp">16 passed</span></div></div>
+      </div>
+      <div class="abs z2 stuck" style="left:141px;top:700px;width:950px;"><div class="tl"><b>Stuck?</b><small>take the finished step</small></div><div style="flex:1;min-width:0"><div class="cmd "><span class="pf">$</span><code>git stash &amp;&amp; git checkout step-2-context</code></div></div></div>
+      <template class="spec-data" data-file="specs/step-2-context.md" data-gh="https://github.com/burnjohn/ai-code-reviewer-workshop/blob/main/specs/step-2-context.md"><div class="html md"><h2>Step 2 · Repository context</h2>
+<p><b>Goal.</b> The reviewer sees more than the diff: project rules, the spec, the full files the PR changes, and callers of what it touches, within a fixed budget. <b>Why.</b> A diff cannot show a missing check, a broken project rule or a broken caller. The model can only reason about what is in its prompt.</p>
+<h3>What to build</h3>
+<p>Everything is in <code>src/context.ts</code>. Replace the TODOs; the types, constants, <code>changedFiles</code> and <code>mapLimit</code> are given.</p>
+<h4>1. Linked docs · <code>extractLinkedDocs(body)</code></h4>
+<ul><li>Up to <code>MAX_LINKED_DOCS</code> unique paths that end in <code>.md</code> and contain a <code>/</code>, in the order they appear in the PR body.</li><li>A <code>/blob/&lt;ref&gt;/&lt;path&gt;.md</code> URL gives <code>&lt;path&gt;</code>. Other URLs, <code>node_modules/</code> and <code>../</code> are ignored. Strip a leading <code>./</code>.</li></ul>
+<h4>2. Changed symbols · <code>extractSymbols(rawDiff)</code></h4>
+<ul><li>Skip new files and <code>DATA_PATH</code> files.</li><li>Take names from added lines (<code>function x</code>, <code>const x = (...) =&gt;</code>, <code>class x</code>, <code>def x</code>) and from the text after the second <code>@@</code> of a hunk header.</li><li>4+ chars, unique, not in <code>STOP_SYMBOLS</code> (given), max <code>MAX_SYMBOLS</code>.</li></ul>
+<h4>3. Callers · <code>findCallers(symbols, files, maxHits)</code></h4>
+<ul><li>Whole-word match per line. Max <code>maxHits</code> overall, 5 per symbol.</li><li><code>text</code> = the trimmed line, cut to 160 chars.</li></ul>
+<h4>4. The budget · <code>assembleContext(candidates, budget)</code></h4>
+<ul><li>Sort by <code>PRIORITY</code>: rules &gt; spec &gt; file &gt; callers.</li><li><code>room = min(maxChars, budget - used)</code>. When <code>room &lt; MIN_USEFUL</code>, skip the block and log <code>✗ … skipped (budget exhausted)</code>.</li><li>Longer text is cut to fit <code>room</code>, with <code>TRUNCATED</code> appended.</li><li>Every block is wrapped as untrusted data:</li></ul>
+<pre>`### ${HEADING[kind]}: ${label}\n${wrapUntrusted(`${kind}:${label}`, text)}`</pre>
+<ul><li>Log one line per candidate: <code>✓</code> (added), <code>~</code> (cut from N) or <code>✗</code> (skipped), then a final <code>context: N block(s), X / BUDGET chars (~T tokens)</code>.</li><li>Return <code>{ blocks, log, chars, budget }</code>.</li></ul>
+<h4>5. Putting it together · <code>gatherContext(source, opts)</code></h4>
+<ul><li>Rules: <code>RULES_FILES</code>.</li><li>Docs: linked docs + changed <code>docs/**/*.md</code> + <code>extraDocs</code>, max <code>MAX_LINKED_DOCS + 2</code>, each up to <code>MAX_DOC_CHARS</code>.</li><li>Files: modified code files (<code>CODE_EXT</code>, not <code>NOT_REVIEWABLE</code> or <code>DATA_PATH</code>), smallest first, each up to <code>MAX_FILE_CHARS</code>.</li><li>Callers: usages of the symbols in <code>source.list()</code> files outside the diff (up to <code>source.scanLimit</code>), skipping <code>node_modules</code>, as one block with <code>maxChars</code> 4000: label = the symbols joined with <code>, </code>, one line per hit as <code>&lt;path&gt;:&lt;line&gt;  [&lt;symbol&gt;]  &lt;text&gt;</code>.</li></ul>
+<h3>Constraints</h3>
+<ul><li>Do not change tests, <code>src/source.ts</code> or <code>src/index.ts</code>.</li></ul>
+<h3>Acceptance</h3>
+<ol><li>WHEN the PR body links a doc, or the diff touches <code>docs/**/*.md</code>, the reviewer SHALL add it as a spec block.</li><li>WHEN the diff changes a function, the reviewer SHALL list its usages outside the diff and skip <code>node_modules</code>.</li><li>WHEN the total exceeds the budget, the reviewer SHALL cut a block to the room left, or skip it when the room is under <code>MIN_USEFUL</code>, in priority order, and log it.</li><li>WHEN blocks are built, every one SHALL be wrapped as untrusted data.</li></ol>
+<h3>Done when</h3>
+<p><code>npm test -- context</code> → <code>16 passed</code> (full <code>npm test</code>: <code>10 failed | 35 passed</code>, steps 3–4).</p>
+<h3>Steps</h3>
+<ol><li><code>git stash &amp;&amp; git checkout step-1-findings</code></li><li>Paste the prompt into your coding agent.</li><li><code>npm test -- context</code></li><li><code>npm run review:mock -- --dry-run</code>: the log lists <code>CLAUDE.md</code> and <code>docs/specs/analytics-dashboard-spec.md</code>, then <code>context: N block(s), X / 60,000 chars</code>.</li><li>Add <code>--no-context</code> and compare the prompt size (or use <code>npm run ui</code>).</li></ol></div><pre class="raw"># Step 2 · Repository context
+
+**Goal.** The reviewer sees more than the diff: project rules, the spec, the full files the PR changes, and callers of what it touches, within a fixed budget.
+**Why.** A diff cannot show a missing check, a broken project rule or a broken caller. The model can only reason about what is in its prompt.
+
+## What to build
+
+Everything is in `src/context.ts`. Replace the TODOs; the types, constants, `changedFiles` and `mapLimit` are given.
+
+### 1. Linked docs · `extractLinkedDocs(body)`
+- Up to `MAX_LINKED_DOCS` unique paths that end in `.md` and contain a `/`, in the order they appear in the PR body.
+- A `/blob/&lt;ref&gt;/&lt;path&gt;.md` URL gives `&lt;path&gt;`. Other URLs, `node_modules/` and `../` are ignored. Strip a leading `./`.
+
+### 2. Changed symbols · `extractSymbols(rawDiff)`
+- Skip new files and `DATA_PATH` files.
+- Take names from added lines (`function x`, `const x = (...) =&gt;`, `class x`, `def x`) and from the text after the second `@@` of a hunk header.
+- 4+ chars, unique, not in `STOP_SYMBOLS` (given), max `MAX_SYMBOLS`.
+
+### 3. Callers · `findCallers(symbols, files, maxHits)`
+- Whole-word match per line. Max `maxHits` overall, 5 per symbol.
+- `text` = the trimmed line, cut to 160 chars.
+
+### 4. The budget · `assembleContext(candidates, budget)`
+- Sort by `PRIORITY`: rules &gt; spec &gt; file &gt; callers.
+- `room = min(maxChars, budget - used)`. When `room &lt; MIN_USEFUL`, skip the block and log `✗ … skipped (budget exhausted)`.
+- Longer text is cut to fit `room`, with `TRUNCATED` appended.
+- Every block is wrapped as untrusted data:
+```ts
+`### ${HEADING[kind]}: ${label}\n${wrapUntrusted(`${kind}:${label}`, text)}`
+```
+- Log one line per candidate: `✓` (added), `~` (cut from N) or `✗` (skipped), then a final `context: N block(s), X / BUDGET chars (~T tokens)`.
+- Return `{ blocks, log, chars, budget }`.
+
+### 5. Putting it together · `gatherContext(source, opts)`
+- Rules: `RULES_FILES`.
+- Docs: linked docs + changed `docs/**/*.md` + `extraDocs`, max `MAX_LINKED_DOCS + 2`, each up to `MAX_DOC_CHARS`.
+- Files: modified code files (`CODE_EXT`, not `NOT_REVIEWABLE` or `DATA_PATH`), smallest first, each up to `MAX_FILE_CHARS`.
+- Callers: usages of the symbols in `source.list()` files outside the diff (up to `source.scanLimit`), skipping `node_modules`, as one block with `maxChars` 4000: label = the symbols joined with `, `, one line per hit as `&lt;path&gt;:&lt;line&gt;  [&lt;symbol&gt;]  &lt;text&gt;`.
+
+## Constraints
+- Do not change tests, `src/source.ts` or `src/index.ts`.
+
+## Acceptance
+1. WHEN the PR body links a doc, or the diff touches `docs/**/*.md`, the reviewer SHALL add it as a spec block.
+2. WHEN the diff changes a function, the reviewer SHALL list its usages outside the diff and skip `node_modules`.
+3. WHEN the total exceeds the budget, the reviewer SHALL cut a block to the room left, or skip it when the room is under `MIN_USEFUL`, in priority order, and log it.
+4. WHEN blocks are built, every one SHALL be wrapped as untrusted data.
+
+## Done when
+`npm test -- context` → `16 passed` (full `npm test`: `10 failed | 35 passed`, steps 3–4).
+
+## Steps
+1. `git stash &amp;&amp; git checkout step-1-findings`
+2. Paste the prompt into your coding agent.
+3. `npm test -- context`
+4. `npm run review:mock -- --dry-run`: the log lists `CLAUDE.md` and `docs/specs/analytics-dashboard-spec.md`, then `context: N block(s), X / 60,000 chars`.
+5. Add `--no-context` and compare the prompt size (or use `npm run ui`).
+
+## Prompt
+```text
+Implement Step 2.
+Read specs/step-2-context.md and follow it exactly.
+Do not change tests, src/source.ts or src/index.ts.
+Verify: run `npm test -- context` until 16 passed.
+Then run `npm run review:mock -- --dry-run`, show me the
+context log, and run it again with --no-context.
+```
+
+## Start from
+`git stash &amp;&amp; git checkout step-1-findings`
+
+## Lost?
+`git stash &amp;&amp; git checkout step-2-context`
+</pre></template>
+      <div class="gdgtext z1">Google<br>Developer<br>Groups</div>
+      <div class="foot"><b></b><span>2 · Context</span></div>
+    </div></div>
+    <template class="notes"><p class="ua">Практика кроку 2. Після тестів запустити npm run review:mock -- --dry-run: у лозі CLAUDE.md і docs/specs/analytics-dashboard-spec.md, потім рядок context: N block(s). Далі додати --no-context і порівняти розмір промпту (або npm run ui). Спец-дефекти мають з’явитися лише з контекстом.</p><p class="say"><b>Say:</b> Run the reviewer with and without context and compare. The spec-only bugs only show up with context.</p><pre class="prompt" data-t="Step 2 · prompt">Implement Step 2.
+Read specs/step-2-context.md and follow it exactly.
+Do not change tests, src/source.ts or src/index.ts.
+Verify: run `npm test -- context` until 16 passed.
+Then run `npm run review:mock -- --dry-run`, show me the
+context log, and run it again with --no-context.</pre><pre class="prompt" data-t="Step 2 · stuck: the finished step">git stash &amp;&amp; git checkout step-2-context</pre></template>
+  </section>
+
+  <section class="slide" data-logo="dock" data-tint="mix" data-block="3 · Gate + Action" data-time="0:23–0:25" data-toc="Step 3 · Gate + GitHub Action">
+    <div class="rig"><div class="tilt">
+      <div class="panel" data-shape="notch-br:403:131" style="left:62px;top:66px;width:1474px;height:768px"></div>
+<div class="abs z1" style="left:120px;top:100px;width:1350px;--c:var(--yellow-h)"><p class="stepbig"><b>Step 3</b><span>of 4 · Gate + GitHub Action · 9 min</span></p><h2 class="h" style="margin:0;font-size:50px">Add a gate, <em>run it in GitHub Actions</em></h2></div>
+      <div class="abs z2 " style="left:141px;top:250px;width:1318px;"><div class="pipe" style="--c:var(--yellow-h)"><div class="pst">PR diff<small>input</small></div><span class="pa"></span><div class="pst">Context<small>repo + spec</small></div><span class="pa"></span><div class="pst">Prompt<small>rules</small></div><span class="pa"></span><div class="pst">Model<small>OpenRouter</small></div><span class="pa"></span><div class="pst">Grounding<small>in the diff?</small></div><span class="pa"></span><div class="pst on">Gate<small>count blockers</small></div><span class="pa"></span><div class="pst on">Inline review<small>on GitHub</small></div></div></div>
+      <div class="abs z2 " style="left:141px;top:340px;width:1318px;"><div class="xrows" style="--c:var(--yellow-h)">
+        <div class="xr "><p class="lbl2">The problem</p><div><h3>The model’s verdict is not a decision</h3><p>It can say “approve” while listing a CRITICAL finding.</p></div></div>
+        <div class="xr ac"><p class="lbl2">What we build</p><div><h3>A gate in code + a GitHub Action</h3><p>Count blockers by severity, post one inline review, exit 1 when there are blockers.</p></div></div>
+        <div class="xr "><p class="lbl2">What you will see</p><div><h3>A red check on your pull request</h3><p>Inline comments in your QuickBlog fork in 2–3 min. A human still merges.</p></div></div>
+      </div></div>
+      <div class="gdgtext z1">Google<br>Developer<br>Groups</div>
+      <div class="foot"><b></b><span>3 · Gate + Action</span></div>
+    </div></div>
+    <template class="notes"><p class="ua">Пояснення кроку 3. Verdict від моделі ігноруємо: гейт рахує blockers за severity у коді та повертає exit code. Workflow читає ворожий текст (заголовок, опис PR), тому безпека workflow — наступний слайд.</p><p class="say"><b>Say:</b> Pass or fail is arithmetic over findings, in code. The workflow itself reads untrusted PR text, so we lock it down.</p></template>
+  </section>
+
+  <section class="slide" data-logo="dock" data-tint="red" data-block="3 · Gate + Action" data-time="0:23–0:25" data-toc="Workflow security rules">
+    <div class="rig"><div class="tilt">
+      <div class="panel" data-shape="notch-br:403:131" style="left:62px;top:66px;width:1474px;height:768px"></div>
+<div class="abs z1" style="left:120px;top:108px;width:1350px;--c:var(--red-h)"><p class="kicker">Step 3 · the workflow reads hostile text</p><h2 class="h" style="margin:0;font-size:54px">Four rules for a <em>safe</em> review workflow</h2></div>
+      <div class="abs z2 " style="left:141px;top:250px;width:1318px;--c:var(--red-h)"><div class="grid2 rules">
+        <div class="card rule"><p class="lbl2"><span>1</span>Trigger</p><p><code>pull_request</code>, never <code>pull_request_target</code></p><div class="cmd"><code>on: pull_request</code></div></div>
+        <div class="card rule"><p class="lbl2"><span>2</span>Permissions</p><p>Least privilege: only what posting a review needs</p><div class="cmd"><code>permissions: {contents: read, pull-requests: write}</code></div></div>
+        <div class="card rule"><p class="lbl2"><span>3</span>Fork guard</p><p>Skip runs from forks: no secrets for strangers</p><div class="cmd"><code>if: github.event.pull_request.head.repo.full_name == github.repository</code></div></div>
+        <div class="card rule"><p class="lbl2"><span>4</span>No PR text in run:</p><p>Never put <code>${{ }}</code> with PR text into a script. Pass it through <code>env:</code></p><div class="cmd"><code>env: { TITLE: ${{ github.event.pull_request.title }} }</code></div></div>
+      </div></div>
+      <div class="gdgtext z1">Google<br>Developer<br>Groups</div>
+      <div class="foot"><b></b><span>3 · Gate + Action</span></div>
+    </div></div>
+    <template class="notes"><p class="ua">Чотири правила безпеки workflow. 1) pull_request, а не pull_request_target — другий дає токен із правами запису коду з форку. 2) Мінімальні permissions. 3) Guard на форки. 4) Жодного тексту PR усередині run: через ${{ }} — це shell-ін’єкція; передавати через env. У специфікації ще persist-credentials: false на обох checkout.</p><p class="say"><b>Say:</b> The PR title is attacker-controlled text. Never paste it into a shell command.</p></template>
+  </section>
+
+  <section class="slide" data-logo="dock" data-tint="mix" data-block="3 · Gate + Action" data-time="0:25–0:29" data-toc="Your turn · Step 3">
+    <div class="rig"><div class="tilt">
+      <div class="panel" data-shape="notch-br:403:131" style="left:62px;top:66px;width:1474px;height:768px"></div>
+<div class="abs z1" style="left:120px;top:100px;width:1350px;--c:var(--yellow-h)"><p class="stepbig"><b>Step 3</b><span>your turn · about 6 min</span></p><h2 class="h" style="margin:0;font-size:50px">Your turn: <em>the gate and the workflow</em></h2></div>
+      <div class="abs z2 turn" style="left:141px;top:244px;width:1318px;">
+        <div class="trow "><span class="stepn" style="--c:var(--yellow-h)">1</span><div class="tl"><b>Start</b><small>the end of step 2</small></div><div class="cmd "><span class="pf">$</span><code>git stash &amp;&amp; git checkout step-2-context</code></div></div>
+        <div class="trow two"><span class="stepn" style="--c:var(--yellow-h)">2</span>
+          <div class="pcard" style="--c:var(--yellow-h)">
+            <header><span><b>Prompt</b> · paste it into your coding agent</span></header>
+            <pre tabindex="0">Implement Step 3.
+Read specs/step-3-github-action.md and follow it exactly.
+Do not change tests or any other file.
+Do not push, commit or touch any remote.
+Verify: run `npm test -- gate workflow` until 9 passed.
+Then show me the final workflow file.</pre>
+          </div>
+          <div class="scard" style="--c:var(--yellow-h)">
+            <header><span><b>Spec</b> · what the agent builds from</span></header>
+            <div class="sbody"><p class="sf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg><b>specs/step-3-github-action.md</b></p><ol><li><b>The gate</b><code>src/gate.ts</code></li><li><b>The workflow</b><code>examples/quick-blog-workflow.yml</code></li></ol></div>
+            <footer>
+              <button type="button" class="sbtn main" data-spec="specs/step-3-github-action.md" data-act="open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>Read</button>
+              <button type="button" class="sbtn" data-spec="specs/step-3-github-action.md" data-act="copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>Copy</span></button>
+              <button type="button" class="sbtn" data-spec="specs/step-3-github-action.md" data-act="download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>Download</button>
+            </footer>
+          </div>
+        </div>
+        <div class="trow "><span class="stepn" style="--c:var(--yellow-h)">3</span><div class="tl"><b>Check</b><small>done when the tests pass</small></div><div class="chk"><div class="cmd "><span class="pf">$</span><code>npm test -- gate workflow</code></div><span class="pa"></span><span class="exp">9 passed</span></div></div>
+      </div>
+      <div class="abs z2 stuck" style="left:141px;top:700px;width:950px;"><div class="tl"><b>Stuck?</b><small>take the finished step</small></div><div style="flex:1;min-width:0"><div class="cmd "><span class="pf">$</span><code>git stash &amp;&amp; git checkout step-3-gate-action</code></div></div></div>
+      <template class="spec-data" data-file="specs/step-3-github-action.md" data-gh="https://github.com/burnjohn/ai-code-reviewer-workshop/blob/main/specs/step-3-github-action.md"><div class="html md"><h2>Step 3 · Gate + GitHub Action</h2>
+<p><b>Goal.</b> Pass or fail is decided by code, and the reviewer runs on every PR in your QuickBlog fork with inline comments and a red or green check. <b>Why.</b> A model can say "approve" while listing a CRITICAL finding. And the workflow that holds your secrets must be safe against code from a pull request.</p>
+<h3>What to build</h3>
+<h4>1. The gate · <code>src/gate.ts</code></h4>
+<ul><li><code>countBlockers(findings, failOn)</code> returns how many findings have <code>RANK[f.severity] &gt;= MIN_RANK[failOn]</code>. Both tables are in the file.</li><li><code>critical</code> → only CRITICAL; <code>warning</code> → CRITICAL and WARNING; <code>any</code> → all; <code>never</code> → 0.</li><li>Never read the model's <code>verdict</code>.</li><li>Remove the <code>void</code> / <code>return 0</code> placeholder and its TODO.</li></ul>
+<h4>2. The workflow · <code>examples/quick-blog-workflow.yml</code></h4>
+<p>Replace the three TODO comments.</p>
+<ul><li>A top-level <code>permissions:</code> block with <code>contents: read</code> and <code>pull-requests: write</code>.</li><li>A fork guard on the review job: <code>if: github.event.pull_request.head.repo.full_name == github.repository</code>.</li><li><code>persist-credentials: false</code> in the <code>with:</code> of both <code>actions/checkout</code> steps (one TODO covers both).</li></ul>
+<p>Keep what is already right: the trigger is <code>on: pull_request</code> (never <code>pull_request_target</code>), and no PR text goes inside <code>${{ }}</code> in a <code>run:</code> line.</p>
+<h3>Constraints</h3>
+<ul><li>Do not change tests or any other file.</li><li>Do not push, commit or touch any remote. You push the workflow yourself.</li></ul>
+<h3>Acceptance</h3>
+<ol><li>WHEN <code>failOn</code> is <code>critical</code>, the reviewer SHALL count only CRITICAL; for <code>warning</code> and <code>any</code> it SHALL count lower severities too; for <code>never</code>, zero.</li><li>WHEN the workflow file is read, it SHALL follow the four security rules in its header.</li><li>WHEN blockers exist, the reviewer SHALL print <code>Gate: FAIL</code> and exit 1.</li><li>WHEN the PR is opened in your fork, the workflow SHALL post one review with inline comments, red exactly when <code>blockers</code> &gt; 0.</li></ol>
+<h3>Done when</h3>
+<p><code>npm test -- gate workflow</code> → <code>9 passed</code> (full <code>npm test</code>: <code>4 failed | 41 passed</code>, step 4).</p>
+<h3>Steps</h3>
+<ol><li><code>git stash &amp;&amp; git checkout step-2-context</code></li><li>Paste the prompt into your coding agent, then <code>npm test -- gate workflow</code>.</li><li>Fork <code>burnjohn/quick-blog</code> (untick "Copy the main branch only"); in the fork enable Actions, then add your OpenRouter key: Settings → Secrets and variables → Actions → New repository secret, name <code>OPENROUTER_API_KEY</code>, value = the key from your <code>.env</code>.</li><li>In your fork on GitHub: Add file → Create new file, name <code>.github/workflows/ai-review.yml</code>, paste your <code>examples/quick-blog-workflow.yml</code>, commit to <code>main</code> (you do this, not the agent). CI takes about 2–3 minutes. CI runs your reviewer repo's <code>final</code> branch; to run your own code, push it to a new branch and set the Actions variable <code>REVIEWER_REF</code> to it.</li><li>Open a PR in your fork: base <code>main</code>, compare <code>analytics</code> (<code>gh pr create -R &lt;you&gt;/quick-blog -B main -H analytics -t Analytics -b ""</code>). Check the Actions tab and "Files changed".</li></ol></div><pre class="raw"># Step 3 · Gate + GitHub Action
+
+**Goal.** Pass or fail is decided by code, and the reviewer runs on every PR in your QuickBlog fork with inline comments and a red or green check.
+**Why.** A model can say "approve" while listing a CRITICAL finding. And the workflow that holds your secrets must be safe against code from a pull request.
+
+## What to build
+
+### 1. The gate · `src/gate.ts`
+- `countBlockers(findings, failOn)` returns how many findings have `RANK[f.severity] &gt;= MIN_RANK[failOn]`. Both tables are in the file.
+- `critical` → only CRITICAL; `warning` → CRITICAL and WARNING; `any` → all; `never` → 0.
+- Never read the model's `verdict`.
+- Remove the `void` / `return 0` placeholder and its TODO.
+
+### 2. The workflow · `examples/quick-blog-workflow.yml`
+Replace the three TODO comments.
+- A top-level `permissions:` block with `contents: read` and `pull-requests: write`.
+- A fork guard on the review job: `if: github.event.pull_request.head.repo.full_name == github.repository`.
+- `persist-credentials: false` in the `with:` of both `actions/checkout` steps (one TODO covers both).
+
+Keep what is already right: the trigger is `on: pull_request` (never `pull_request_target`), and no PR text goes inside `${{ }}` in a `run:` line.
+
+## Constraints
+- Do not change tests or any other file.
+- Do not push, commit or touch any remote. You push the workflow yourself.
+
+## Acceptance
+1. WHEN `failOn` is `critical`, the reviewer SHALL count only CRITICAL; for `warning` and `any` it SHALL count lower severities too; for `never`, zero.
+2. WHEN the workflow file is read, it SHALL follow the four security rules in its header.
+3. WHEN blockers exist, the reviewer SHALL print `Gate: FAIL` and exit 1.
+4. WHEN the PR is opened in your fork, the workflow SHALL post one review with inline comments, red exactly when `blockers` &gt; 0.
+
+## Done when
+`npm test -- gate workflow` → `9 passed` (full `npm test`: `4 failed | 41 passed`, step 4).
+
+## Steps
+1. `git stash &amp;&amp; git checkout step-2-context`
+2. Paste the prompt into your coding agent, then `npm test -- gate workflow`.
+3. Fork `burnjohn/quick-blog` (untick "Copy the main branch only"); in the fork enable Actions, then add your OpenRouter key: Settings → Secrets and variables → Actions → New repository secret, name `OPENROUTER_API_KEY`, value = the key from your `.env`.
+4. In your fork on GitHub: Add file → Create new file, name `.github/workflows/ai-review.yml`, paste your `examples/quick-blog-workflow.yml`, commit to `main` (you do this, not the agent). CI takes about 2–3 minutes. CI runs your reviewer repo's `final` branch; to run your own code, push it to a new branch and set the Actions variable `REVIEWER_REF` to it.
+5. Open a PR in your fork: base `main`, compare `analytics` (`gh pr create -R &lt;you&gt;/quick-blog -B main -H analytics -t Analytics -b ""`). Check the Actions tab and "Files changed".
+
+## Prompt
+```text
+Implement Step 3.
+Read specs/step-3-github-action.md and follow it exactly.
+Do not change tests or any other file.
+Do not push, commit or touch any remote.
+Verify: run `npm test -- gate workflow` until 9 passed.
+Then show me the final workflow file.
+```
+
+## Start from
+`git stash &amp;&amp; git checkout step-2-context`
+
+## Lost?
+`git stash &amp;&amp; git checkout step-3-gate-action`
+</pre></template>
+      <div class="gdgtext z1">Google<br>Developer<br>Groups</div>
+      <div class="foot"><b></b><span>3 · Gate + Action</span></div>
+    </div></div>
+    <template class="notes"><p class="ua">Практика кроку 3, частина 1: гейт і workflow-файл локально, тести зелені. Агент нічого не пушить — пушимо самі на наступному слайді.</p><p class="say"><b>Say:</b> Make the gate pass locally first. The agent does not push anything: you do, on the next slide.</p><pre class="prompt" data-t="Step 3 · prompt">Implement Step 3.
+Read specs/step-3-github-action.md and follow it exactly.
+Do not change tests or any other file.
+Do not push, commit or touch any remote.
+Verify: run `npm test -- gate workflow` until 9 passed.
+Then show me the final workflow file.</pre><pre class="prompt" data-t="Step 3 · stuck: the finished step">git stash &amp;&amp; git checkout step-3-gate-action</pre></template>
+  </section>
+
+  <section class="slide" data-logo="dock" data-tint="mix" data-block="3 · Gate + Action" data-time="0:29–0:32" data-toc="Step 3 · run it in CI">
+    <div class="rig"><div class="tilt">
+      <div class="panel" data-shape="notch-br:403:131" style="left:62px;top:66px;width:1474px;height:768px"></div>
+<div class="abs z1" style="left:120px;top:108px;width:1350px;--c:var(--yellow-h)"><p class="kicker">Step 3 of 4 · your turn · run it in CI</p><h2 class="h" style="margin:0;font-size:54px">Your turn: <em>a red check on your fork</em></h2></div>
+      <div class="abs z2 turn setup" style="left:141px;top:250px;width:1318px;">
+        <div class="trow "><span class="stepn" style="--c:var(--yellow-h)">1</span><div class="tl"><b>Fork QuickBlog</b><small><u>untick</u> “main branch only”</small></div><div class="cmd url"><code>https://github.com/burnjohn/quick-blog</code></div></div>
+        <div class="trow "><span class="stepn" style="--c:var(--yellow-h)">2</span><div class="tl"><b>Enable Actions</b><small>the Actions tab of your fork</small></div><div class="cmd nocp"><code>“I understand my workflows, go ahead and enable them”</code></div></div>
+        <div class="trow "><span class="stepn" style="--c:var(--yellow-h)">3</span><div class="tl"><b>Add your key</b><small>Secrets → Actions → New secret</small></div><div class="cmd "><code>OPENROUTER_API_KEY</code></div></div>
+        <div class="trow "><span class="stepn" style="--c:var(--yellow-h)">4</span><div class="tl"><b>Add the workflow</b><small>fork → Add file → Create new file; paste your yml</small></div><div class="cmd "><code>.github/workflows/ai-review.yml</code></div></div>
+        <div class="trow "><span class="stepn" style="--c:var(--yellow-h)">5</span><div class="tl"><b>Open the PR</b><small>analytics → main, in your fork</small></div><div class="cmd "><span class="pf">$</span><code>gh pr create -R &lt;you&gt;/quick-blog -B main -H analytics -t Analytics -b ""</code></div></div>
+      </div>
+      <div class="abs z2 " style="left:141px;top:716px;width:990px;"><span class="warnb">Keep the analytics branch: untick “Copy the main branch only”.</span></div>
+      <div class="gdgtext z1">Google<br>Developer<br>Groups</div>
+      <div class="foot"><b></b><span>3 · Gate + Action</span></div>
+    </div></div>
+    <template class="notes"><p class="ua">Підготовка форку QuickBlog. Критично: зняти галочку «Copy the main branch only», інакше гілки analytics не буде. Далі Actions → enable workflows. Ключ OpenRouter у GitHub: Settings → Secrets and variables → Actions → New repository secret, імʼя OPENROUTER_API_KEY, значення — той самий ключ, що в .env (без нього крок review впаде). Workflow додаємо прямо в GitHub: у форку Add file → Create new file, імʼя .github/workflows/ai-review.yml (кнопка Copy), вставляємо вміст свого examples/quick-blog-workflow.yml, commit у main. PR — командою gh з -R (інакше gh або веб-форма запропонують базою burnjohn/quick-blog замість вашого форку). CI іде ~2–3 хв (DeepSeek, три агенти паралельно): поки чекаємо — відкриваємо вкладку Actions і дивимось, як іде job.</p><p class="say"><b>Say:</b> Fork QuickBlog, untick copy-main-only, add the secret, create the workflow file in the GitHub UI, open the PR, and watch the Actions tab: the red check lands in 2–3 minutes.</p></template>
+  </section>
+
+  <section class="slide" data-logo="dock" data-tint="red" data-block="4 · More reviewers" data-time="0:32–0:34" data-toc="Step 4 · More reviewers">
+    <div class="rig"><div class="tilt">
+      <div class="panel" data-shape="notch-br:403:131" style="left:62px;top:66px;width:1474px;height:768px"></div>
+<div class="abs z1" style="left:120px;top:100px;width:1350px;--c:var(--red-h)"><p class="stepbig"><b>Step 4</b><span>of 4 · More reviewers · 7 min</span></p><h2 class="h" style="margin:0;font-size:50px">Add more reviewers, <em>merge their findings</em></h2></div>
+      <div class="abs z2 " style="left:141px;top:250px;width:1318px;"><div class="pipe" style="--c:var(--red-h)"><div class="pst">PR diff<small>input</small></div><span class="pa"></span><div class="pst">Context<small>repo + spec</small></div><span class="pa"></span><div class="pst on">Prompt<small>rules</small></div><span class="pa"></span><div class="pst on x">Model<small>OpenRouter</small></div><span class="pa"></span><div class="pst">Grounding<small>in the diff?</small></div><span class="pa"></span><div class="pst">Gate<small>count blockers</small></div><span class="pa"></span><div class="pst">Inline review<small>on GitHub</small></div></div></div>
+      <div class="abs z2 " style="left:141px;top:340px;width:1318px;"><div class="xrows" style="--c:var(--red-h)">
+        <div class="xr "><p class="lbl2">The problem</p><div><h3>One generalist misses whole classes</h3><p>In the talk, 8 diff agents and 1 spec agent each found 22 of 28, and their finds barely overlap.</p></div></div>
+        <div class="xr ac"><p class="lbl2">What we build</p><div><h3>Agents as .md files + dedup</h3><p>Security and spec-conformance run in parallel. The same file, lines and title merge into one finding.</p></div></div>
+        <div class="xr "><p class="lbl2">What you will see</p><div><h3>A table per agent</h3><p>Findings, tokens and cost for each agent, then the total after dedup.</p></div></div>
+      </div></div>
+      <div class="gdgtext z1">Google<br>Developer<br>Groups</div>
+      <div class="foot"><b></b><span>4 · More reviewers</span></div>
+    </div></div>
+    <template class="notes"><p class="ua">Пояснення кроку 4. Один універсальний рев’юер пропускає цілі класи. У доповіді вісім diff-агентів дорівнювали одному spec-агенту (22/28), а знахідки майже не перетиналися; разом 27/28. Агенти — це .md файли; дедуп по file+lines+title; модель можна обрати на агента.</p><p class="say"><b>Say:</b> Agents are just markdown files. Run several, dedup the overlap, and look at what each one costs.</p></template>
+  </section>
+
+  <section class="slide" data-logo="dock" data-tint="red" data-block="4 · More reviewers" data-time="0:34–0:39" data-toc="Your turn · Step 4">
+    <div class="rig"><div class="tilt">
+      <div class="panel" data-shape="notch-br:403:131" style="left:62px;top:66px;width:1474px;height:768px"></div>
+<div class="abs z1" style="left:120px;top:100px;width:1350px;--c:var(--red-h)"><p class="stepbig"><b>Step 4</b><span>your turn · about 6 min</span></p><h2 class="h" style="margin:0;font-size:50px">Your turn: <em>more reviewers</em></h2></div>
+      <div class="abs z2 turn" style="left:141px;top:244px;width:1318px;">
+        <div class="trow "><span class="stepn" style="--c:var(--red-h)">1</span><div class="tl"><b>Start</b><small>the end of step 3</small></div><div class="cmd "><span class="pf">$</span><code>git stash &amp;&amp; git checkout step-3-gate-action</code></div></div>
+        <div class="trow two"><span class="stepn" style="--c:var(--red-h)">2</span>
+          <div class="pcard" style="--c:var(--red-h)">
+            <header><span><b>Prompt</b> · paste it into your coding agent</span></header>
+            <pre tabindex="0">Implement Step 4.
+Read specs/step-4-more-reviewers.md and follow it exactly.
+Do not change tests or src/ files other than src/dedup.ts.
+Verify: run `npm test` until 45 passed.
+Then run `npm run review:mock -- --dry-run` and show me
+the three agents.</pre>
+          </div>
+          <div class="scard" style="--c:var(--red-h)">
+            <header><span><b>Spec</b> · what the agent builds from</span></header>
+            <div class="sbody"><p class="sf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg><b>specs/step-4-more-reviewers.md</b></p><ol><li><b>Two agent files</b><code>.reviewer/agents/</code></li><li><b>The merge step</b><code>src/dedup.ts</code></li><li><b>Already wired, nothing to write</b></li></ol></div>
+            <footer>
+              <button type="button" class="sbtn main" data-spec="specs/step-4-more-reviewers.md" data-act="open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>Read</button>
+              <button type="button" class="sbtn" data-spec="specs/step-4-more-reviewers.md" data-act="copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span>Copy</span></button>
+              <button type="button" class="sbtn" data-spec="specs/step-4-more-reviewers.md" data-act="download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>Download</button>
+            </footer>
+          </div>
+        </div>
+        <div class="trow "><span class="stepn" style="--c:var(--red-h)">3</span><div class="tl"><b>Check</b><small>done when the tests pass</small></div><div class="chk"><div class="cmd "><span class="pf">$</span><code>npm test</code></div><span class="pa"></span><span class="exp">45 passed</span></div></div>
+      </div>
+      <div class="abs z2 stuck" style="left:141px;top:700px;width:950px;"><div class="tl"><b>Stuck?</b><small>take the finished step</small></div><div style="flex:1;min-width:0"><div class="cmd "><span class="pf">$</span><code>git stash &amp;&amp; git checkout step-4-more-reviewers</code></div></div></div>
+      <template class="spec-data" data-file="specs/step-4-more-reviewers.md" data-gh="https://github.com/burnjohn/ai-code-reviewer-workshop/blob/main/specs/step-4-more-reviewers.md"><div class="html md"><h2>Step 4 · More reviewers</h2>
+<p><b>Goal.</b> Three agents (general, security, spec-conformance) run together, and their duplicate findings are merged before the review is posted. <b>Why.</b> Spec-only defects have no wrong line in the diff: something required is missing. A reviewer that reasons from the spec finds them. Three agents also report one bug three times, so you need a merge step and a cost line per agent.</p>
+<h3>What to build</h3>
+<h4>1. Two agent files · <code>.reviewer/agents/</code></h4>
+<p>An agent file is frontmatter (<code>name</code>, <code>model</code>, <code>fail_on</code>, optional <code>spec:</code>) plus a system prompt. The file name is the agent id.</p>
+<ul><li>Copy <code>fixtures/agents/security.md</code> and <code>fixtures/agents/spec-conformance.md</code> to <code>.reviewer/agents/</code>, with the same file names.</li><li><code>security.md</code>: keep its narrow scope, its negative list and its cap of 5 findings, worst first. Add one rule: every finding names the attacker input.</li><li><code>spec-conformance.md</code>: keep the <code>spec: docs/specs/analytics-dashboard-spec.md</code> line, the rule that the AC id (<code>AC-x.y</code>) comes first in the title, category <code>spec</code>, and "missing code counts". Add a negative list: style, and requirements the PR does not touch.</li></ul>
+<h4>2. The merge step · <code>src/dedup.ts</code></h4>
+<p>Implement <code>dedupFindings(perAgent)</code>.</p>
+<ul><li>Walk the agents in order. For each finding, look for an already merged one with <code>sameProblem(merged, finding)</code>. The helper checks the file, overlapping ranges and title similarity.</li><li>No match: push <code>{ ...finding, agents: [agent] }</code>.</li><li>Match: add the agent if it is not listed. If the new severity is higher by <code>RANK</code>, copy the new finding over the merged one and keep the <code>agents</code> list. On equal severity the first report stays.</li><li>Return the list sorted by <code>RANK</code> descending, then <code>file</code> and <code>start_line</code> ascending.</li></ul>
+<h4>3. Already wired, nothing to write</h4>
+<p>The parallel run, the <code>AGENTS=…</code> filter, <code>REVIEW_MODEL</code>, and tokens and cost per agent.</p>
+<h3>Constraints</h3>
+<ul><li>Do not change tests, or any file in <code>src/</code> other than <code>src/dedup.ts</code>.</li></ul>
+<h3>Acceptance</h3>
+<ol><li>WHEN two agents report the same file, overlapping lines and a similar title, the reviewer SHALL merge them, keep the highest severity and list both agents.</li><li>WHEN a file <code>&lt;id&gt;.md</code> is in <code>.reviewer/agents/</code>, the reviewer SHALL run it as an agent.</li><li>WHEN the spec agent has a <code>spec:</code> line, the reviewer SHALL put that doc into the context.</li><li>WHEN all agents finish, the reviewer SHALL print tokens and cost per agent and a deduped total.</li></ol>
+<h3>Done when</h3>
+<p><code>npm test</code> → <code>45 passed</code>.</p>
+<h3>Steps</h3>
+<ol><li><code>git stash &amp;&amp; git checkout step-3-gate-action</code></li><li>Paste the prompt into your coding agent.</li><li><code>npm test</code></li><li><code>npm run review:mock -- --dry-run</code>: three agents, and the spec in the context log.</li><li><code>npm run review</code> (or <code>npm run ui</code>): three <code>■</code> sections with cost, then <code>Findings per agent: … → N after dedup</code>.</li></ol></div><pre class="raw"># Step 4 · More reviewers
+
+**Goal.** Three agents (general, security, spec-conformance) run together, and their duplicate findings are merged before the review is posted.
+**Why.** Spec-only defects have no wrong line in the diff: something required is missing. A reviewer that reasons from the spec finds them. Three agents also report one bug three times, so you need a merge step and a cost line per agent.
+
+## What to build
+
+### 1. Two agent files · `.reviewer/agents/`
+An agent file is frontmatter (`name`, `model`, `fail_on`, optional `spec:`) plus a system prompt. The file name is the agent id.
+- Copy `fixtures/agents/security.md` and `fixtures/agents/spec-conformance.md` to `.reviewer/agents/`, with the same file names.
+- `security.md`: keep its narrow scope, its negative list and its cap of 5 findings, worst first. Add one rule: every finding names the attacker input.
+- `spec-conformance.md`: keep the `spec: docs/specs/analytics-dashboard-spec.md` line, the rule that the AC id (`AC-x.y`) comes first in the title, category `spec`, and "missing code counts". Add a negative list: style, and requirements the PR does not touch.
+
+### 2. The merge step · `src/dedup.ts`
+Implement `dedupFindings(perAgent)`.
+- Walk the agents in order. For each finding, look for an already merged one with `sameProblem(merged, finding)`. The helper checks the file, overlapping ranges and title similarity.
+- No match: push `{ ...finding, agents: [agent] }`.
+- Match: add the agent if it is not listed. If the new severity is higher by `RANK`, copy the new finding over the merged one and keep the `agents` list. On equal severity the first report stays.
+- Return the list sorted by `RANK` descending, then `file` and `start_line` ascending.
+
+### 3. Already wired, nothing to write
+The parallel run, the `AGENTS=…` filter, `REVIEW_MODEL`, and tokens and cost per agent.
+
+## Constraints
+- Do not change tests, or any file in `src/` other than `src/dedup.ts`.
+
+## Acceptance
+1. WHEN two agents report the same file, overlapping lines and a similar title, the reviewer SHALL merge them, keep the highest severity and list both agents.
+2. WHEN a file `&lt;id&gt;.md` is in `.reviewer/agents/`, the reviewer SHALL run it as an agent.
+3. WHEN the spec agent has a `spec:` line, the reviewer SHALL put that doc into the context.
+4. WHEN all agents finish, the reviewer SHALL print tokens and cost per agent and a deduped total.
+
+## Done when
+`npm test` → `45 passed`.
+
+## Steps
+1. `git stash &amp;&amp; git checkout step-3-gate-action`
+2. Paste the prompt into your coding agent.
+3. `npm test`
+4. `npm run review:mock -- --dry-run`: three agents, and the spec in the context log.
+5. `npm run review` (or `npm run ui`): three `■` sections with cost, then `Findings per agent: … → N after dedup`.
+
+## Prompt
+```text
+Implement Step 4.
+Read specs/step-4-more-reviewers.md and follow it exactly.
+Do not change tests or src/ files other than src/dedup.ts.
+Verify: run `npm test` until 45 passed.
+Then run `npm run review:mock -- --dry-run` and show me
+the three agents.
+```
+
+## Start from
+`git stash &amp;&amp; git checkout step-3-gate-action`
+
+## Lost?
+`git stash &amp;&amp; git checkout step-4-more-reviewers`
+</pre></template>
+      <div class="gdgtext z1">Google<br>Developer<br>Groups</div>
+      <div class="foot"><b></b><span>4 · More reviewers</span></div>
+    </div></div>
+    <template class="notes"><p class="ua">Практика кроку 4: додати агентів-файлів, запустити всі, подивитись таблицю по агентах: npm run review (або npm run ui) — три секції з вартістю і рядок «Findings per agent … → N after dedup». Після — показуємо результат на екрані.</p><p class="say"><b>Say:</b> Add an agent, run all of them, and compare the table.</p><pre class="prompt" data-t="Step 4 · prompt">Implement Step 4.
+Read specs/step-4-more-reviewers.md and follow it exactly.
+Do not change tests or src/ files other than src/dedup.ts.
+Verify: run `npm test` until 45 passed.
+Then run `npm run review:mock -- --dry-run` and show me
+the three agents.</pre><pre class="prompt" data-t="Step 4 · stuck: the finished step">git stash &amp;&amp; git checkout step-4-more-reviewers</pre></template>
+  </section>
+
+  <section class="slide" data-logo="dock" data-tint="red" data-block="4 · More reviewers" data-time="0:34–0:39" data-toc="Result · the combination wins">
+    <div class="rig"><div class="tilt">
+      <div class="panel" data-shape="notch-br:403:131" style="left:62px;top:66px;width:1474px;height:768px"></div>
+<div class="abs z1" style="left:120px;top:108px;width:1350px;--c:var(--red-h)"><p class="kicker">Step 4 · from the talk · same PR · 28 core defects</p><h2 class="h" style="margin:0;font-size:54px">The <em>combination</em> found the most</h2></div>
+      <div class="abs z2 " style="left:141px;top:282px;width:1260px;"><div class="hbars">
+          <div class="hb"><div class="lbl">8 diff agents<small>diff-only reviewers</small></div><div class="track"><div class="fill" style="--w:78.6%;--c:var(--tx2)"></div></div><div class="val">22/28</div></div>
+          <div class="hb"><div class="lbl">1 spec agent<small>reads the spec</small></div><div class="track"><div class="fill" style="--w:78.6%;--c:var(--tx2)"></div></div><div class="val">22/28</div></div>
+          <div class="hb"><div class="lbl">Combined<small>union of both</small></div><div class="track"><div class="fill" style="--w:96.4%;--c:var(--red-h)"></div></div><div class="val" style="color:var(--red-h)">27/28</div></div>
+        </div></div>
+      <div class="abs z2 " style="left:141px;top:560px;width:1100px;--c:var(--red-h)"><p class="keyline">Their finds barely overlap, so <em>dedup + union wins.</em></p><p class="src" style="margin-top:14px">Source: DevDigest talk, same QuickBlog PR, 28 core defects</p></div>
+      <div class="gdgtext z1">Google<br>Developer<br>Groups</div>
+      <div class="foot"><b></b><span>4 · More reviewers</span></div>
+    </div></div>
+    <template class="notes"><p class="ua">Підсумок із доповіді: вісім diff-агентів і один spec-агент дають по 22 з 28, але знаходять різне; разом 27 з 28. Тому цінність у різноманітності рев’юерів, а не в кількості однакових.</p><p class="say"><b>Say:</b> Eight copies of the same idea find the same bugs. One different idea finds new ones.</p></template>
+  </section>
+
+  <section class="slide" data-logo="dock" data-tint="mix" data-block="5 · Show + wrap" data-time="0:39–0:45" data-toc="One engine, four doors">
+    <div class="rig"><div class="tilt">
+      <div class="panel" data-shape="notch-br:403:131" style="left:62px;top:66px;width:1474px;height:768px"></div>
+<div class="abs z1" style="left:120px;top:108px;width:1350px;--c:var(--blue-h)"><p class="kicker">Show · 6 minutes</p><h2 class="h" style="margin:0;font-size:54px">One engine, <em>four doors</em></h2></div>
+      <div class="abs z2 " style="left:141px;top:262px;width:740px;"><div class="doors" style="grid-template-columns:repeat(2,1fr);gap:14px">
+          <div class="door2" style="--c:var(--blue-h);width:auto"><b>CLI</b><small>npm run review</small></div>
+          <div class="door2" style="--c:var(--blue-h);width:auto"><b>GitHub Action</b><small>every pull request</small></div>
+          <div class="door2" style="--c:var(--blue-h);width:auto"><b>MCP tool</b><small>Claude Code · branch stretch/mcp</small></div>
+          <div class="door2" style="--c:var(--blue-h);width:auto"><b>UI</b><small>npm run ui · ours, live</small></div>
+        </div>
+        <div class="engine" style="margin-top:16px;padding:16px"><b style="font-size:30px">review engine</b><div style="font-size:20px">one pipeline, four ways in</div></div></div>
+      <div class="abs z2 " style="left:921px;top:262px;width:538px;"><div class="win vid"><div class="bar"><i style="background:var(--red)"></i><i style="background:var(--yellow)"></i><i style="background:var(--green)"></i><span style="margin-left:10px">npm run ui · three agents, mock run</span></div><video src="media/ui-demo-loop.mp4" autoplay loop muted playsinline preload="auto" aria-label="npm run ui · three agents, mock run"></video></div></div>
+      <div class="abs z2 " style="left:141px;top:716px;width:990px;display:flex;align-items:center;gap:18px"><p class="lbl2" style="--c:var(--blue-h);margin:0;flex:none;width:106px">At home</p><div style="flex:1;min-width:0"><div class="cmd "><span class="pf">$</span><code>claude mcp add ai-reviewer -- npx tsx mcp/server.ts</code></div></div></div>
+      <div class="gdgtext z1">Google<br>Developer<br>Groups</div>
+      <div class="foot"><b></b><span>5 · Show + wrap</span></div>
+    </div></div>
+    <template class="notes"><p class="ua">Показ (~4 хв): той самий двигун через чотири «двері». Живе демо MCP: у репо рев’юера на гілці stretch/mcp (npm ci, claude mcp add ai-reviewer -- npx tsx mcp/server.ts) внести маленьку зміну з багом і попросити Claude Code «Review my changes with ai-reviewer, agents: general» — перевірено, ~20 с. Сервер дивиться git diff HEAD і .reviewer/agents у поточній папці, тому працює саме в репо рев’юера. Праворуч — запис UI (npm run ui, mock): це план B, якщо мережа підведе. Вдома — команда внизу: спершу git switch stretch/mcp && npm ci у репо рев’юера, потім claude mcp add.</p><p class="say"><b>Say:</b> The engine does not care who calls it. CLI, CI, MCP and a UI are four adapters.</p></template>
+  </section>
+
+  <section class="slide" data-logo="dock" data-tint="mix" data-block="5 · Show + wrap" data-time="0:39–0:45" data-toc="Where it grows: DevDigest studio">
+    <div class="rig"><div class="tilt">
+      <div class="panel" data-shape="notch-br:403:131" style="left:62px;top:66px;width:1474px;height:768px"></div>
+<div class="abs z1" style="left:120px;top:108px;width:1350px;--c:var(--green-h)"><p class="kicker">Where it grows</p><h2 class="h" style="margin:0;font-size:54px">The same engine, <em>grown into a product</em></h2></div>
+      <div class="abs z2 " style="left:141px;top:242px;width:860px;"><div class="win vid"><div class="bar"><i style="background:var(--red)"></i><i style="background:var(--yellow)"></i><i style="background:var(--green)"></i><span style="margin-left:10px">DevDigest studio · quick-blog PR #44 · recording</span></div><video src="media/demo-studio.mp4" autoplay loop muted playsinline preload="auto" aria-label="DevDigest studio · quick-blog PR #44 · recording"></video></div></div>
+      <div class="gdgtext z1">Google<br>Developer<br>Groups</div>
+      <div class="foot"><b></b><span>5 · Show + wrap</span></div>
+    </div></div>
+    <template class="notes"><p class="ua">DevDigest studio — це те, у що виростає той самий двигун. Показуємо запис, не наживо. Наш мінімальний UI з репо — маленька версія цього.</p><p class="say"><b>Say:</b> This is where the same engine grows. It is a recording, not a live run.</p></template>
+  </section>
+
+  <section class="slide" data-logo="dock" data-tint="green" data-block="5 · Show + wrap" data-time="0:39–0:45" data-toc="What is next">
+    <div class="rig"><div class="tilt">
+      <div class="panel" data-shape="notch-br:403:131" style="left:62px;top:66px;width:1474px;height:768px"></div>
+<div class="abs z1" style="left:120px;top:108px;width:1350px;--c:var(--green-h)"><p class="kicker">After today</p><h2 class="h" style="margin:0;font-size:54px">Three <em>next moves</em></h2></div>
+      <div class="abs z2 " style="left:141px;top:282px;width:1318px;"><div class="grid3">
+        <div class="card" style=""><p class="lbl2">More context</p><h3>Repo map</h3><p>Give the model the structure of the repo, not only the changed files.</p></div>
+        <div class="card" style=""><p class="lbl2">A skeptic</p><h3>Verifier agent</h3><p>A second agent tries to refute each finding before it is posted.</p></div>
+        <div class="card" style=""><p class="lbl2">A score</p><h3>Evals</h3><p>Plant defects in PRs, count what you catch, watch it over time.</p></div>
+      </div></div>
+      <div class="gdgtext z1">Google<br>Developer<br>Groups</div>
+      <div class="foot"><b></b><span>5 · Show + wrap</span></div>
+    </div></div>
+    <template class="notes"><p class="ua">Що далі: repo map (щабель 4 драбини контексту), verifier-агент (спростовує знахідки перед публікацією), evals на PR із підкладеними дефектами — так вимірюємо, чи стало краще.</p><p class="say"><b>Say:</b> Three next moves: more context, a skeptic, and a score.</p></template>
+  </section>
+
+  <section class="slide" data-logo="1400 175 190 0" data-tint="mix" data-block="5 · Show + wrap" data-time="0:39–0:45" data-toc="Thank you">
+    <div class="rig"><div class="tilt">
+      
+<div class="panel ghost" data-shape="cut-tl:540:196 notch-br:403:131" style="left:62px;top:66px;width:1474px;height:768px"></div>
+      <div class="badge z1" style="left:96px;top:80px"><img src="img/devfest-logo.png" alt="DevFest"><div class="loc">Warsaw</div></div>
+      <div class="abs z2" style="left:118px;top:300px;width:1000px">
+        <p class="kicker" style="--c:var(--yellow-h)">Thank you · questions?</p>
+        <h2 class="title" style="font-size:96px">Build it <span class="shine">at home</span></h2>
+        <div style="margin-top:36px;display:flex;flex-direction:column;gap:12px;width:980px">
+          <p class="lbl2" style="--c:var(--blue-h);margin:0">Workshop repo</p><div class="cmd url"><code>https://github.com/burnjohn/ai-code-reviewer-workshop</code></div>
+          <p class="lbl2" style="--c:var(--green-h);margin:8px 0 0">QuickBlog (the target)</p><div class="cmd url"><code>https://github.com/burnjohn/quick-blog</code></div>
+        </div>
+      </div>
+      <div class="abs z2" style="left:1190px;top:310px;width:300px;text-align:center"><div class="qrwrap"><div class="qr" data-url="https://github.com/burnjohn/ai-code-reviewer-workshop" role="img" aria-label="QR code: workshop repository"></div></div>
+        <p class="src" style="margin-top:16px">Workshop repo</p></div>
+      <div class="gdgtext z1">Google<br>Developer<br>Groups</div>
+      
+    </div></div>
+    <template class="notes"><p class="ua">Завершення: репозиторій і QuickBlog з кнопками Copy, QR на репо воркшопу. Питання.</p><p class="say"><b>Say:</b> Thank you. The repo and the target PR are yours to keep.</p></template>
+  </section>
+
+  <section class="slide" data-logo="dock" data-tint="mix" data-block="5 · Show + wrap" data-time="0:39–0:45" data-toc="Contacts">
+    <div class="rig"><div class="tilt">
+      <div class="panel" data-shape="notch-br:403:131" style="left:62px;top:66px;width:1474px;height:768px"></div>
+<div class="abs z1" style="left:120px;top:110px;width:1300px">
+        <p class="kicker" style="--c:var(--yellow-h)">Thank you</p>
+        <h2 class="h" style="margin:0">Let's stay <span class="shine">in touch</span></h2>
+      </div>
+      <div class="abs z2 qrcard" style="left:150px;top:260px;width:320px;--c:var(--blue-h)"><div class="qrwrap"><div class="qr" data-url="https://www.linkedin.com/in/ai-consult/" role="img" aria-label="QR code: LinkedIn"></div></div>
+        <span class="lbl">LinkedIn</span><b>Ivan Lapa</b><small>linkedin.com/in/ai-consult</small></div>
+      <div class="abs z2 qrcard" style="left:520px;top:260px;width:320px;--c:var(--red-h)"><div class="qrwrap"><div class="qr" data-url="https://www.instagram.com/burning_johnny/" role="img" aria-label="QR code: Instagram"></div></div>
+        <span class="lbl">Instagram</span><b>@burning_johnny</b><small>instagram.com/burning_johnny</small></div>
+      <div class="abs qrsep z1" style="left:920px;top:270px;height:380px"></div>
+      <div class="abs z2 qrcard" style="left:1000px;top:260px;width:400px;--c:var(--green-h)"><div class="qrwrap"><div class="qr" data-url="https://github.com/burnjohn/ai-code-reviewer-workshop" role="img" aria-label="QR code: workshop repository"></div></div>
+        <span class="lbl">Code</span><b>Workshop repo</b><small>github.com/burnjohn/<br>ai-code-reviewer-workshop</small></div>
+      <div class="gdgtext z1">Google<br>Developer<br>Groups</div>
+      
+    </div></div>
+    <template class="notes"><p class="ua">Контакти: LinkedIn, Instagram і репозиторій воркшопу. Лишаю на екрані, поки відповідаю на питання.</p><p class="say"><b>Say:</b> If you want to keep in touch: LinkedIn, Instagram, and the repo is yours to keep.</p></template>
+  </section>
+
+</div></div>
+<nav id="decksw" aria-label="Switch deck"><a href="../talk/">Talk</a><a href="../workshop/" aria-current="page">Workshop</a></nav>
+<div id="bar"></div>
+<div id="scrub" role="slider" aria-label="Slides" tabindex="-1"><div class="trk"><div class="fill"></div></div></div>
+<div id="peek" aria-hidden="true"><div class="pv"></div><div class="cap"><b></b><span></span></div></div>
+
+<script src="vendor/three.min.js"></script>
+<script src="vendor/qrcode.min.js"></script>
+<script>
+/* slide numbers in footers + QR codes (runs before the engine measures panels) */
+(function(){
+  const sl=[...document.querySelectorAll('#stage .slide')], n=String(sl.length).padStart(2,'0');
+  sl.forEach((s,k)=>s.querySelectorAll('.foot b').forEach(b=>b.textContent=String(k+1).padStart(2,'0')+' / '+n));
+  document.querySelectorAll('.scrolltbl').forEach(e=>{e.addEventListener('click',ev=>ev.stopPropagation());e.addEventListener('keydown',ev=>ev.stopPropagation());});
+  /* numbers with data-count tick up from 0 when their slide opens (not in QA / lite) */
+  addEventListener('deck:slide',e=>{ const D=window.DECK; if(!D||D.QA||D.lite) return;
+    e.detail.slide.querySelectorAll('[data-count]').forEach(el=>{ const n=+el.dataset.count, dur=1400; let t0=0;
+      const f=now=>{ const k=Math.min(1,(now-t0)/dur); el.textContent=Math.round(n*(1-Math.pow(1-k,3))); if(k<1) requestAnimationFrame(f); };
+      el.textContent='0'; setTimeout(()=>{ t0=performance.now(); requestAnimationFrame(f); },500); }); });
+  document.querySelectorAll('.qr[data-url]').forEach(q=>{ try{ new QRCode(q,{text:q.dataset.url,width:220,height:220,colorDark:'#0b0c0f',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M}); }catch(e){ q.textContent=q.dataset.url; } });
+})();
+</script>
+<script src="deck.js"></script>
+<script src="scene.js"></script>
+<script src="nav.js"></script>
+<script src="ws.js"></script>
+<script src="media.js"></script>
+</body>
+</html>
