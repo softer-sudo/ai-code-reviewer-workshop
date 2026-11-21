@@ -1,0 +1,8 @@
+{
+  "owner": "burnjohn",
+  "repo": "quick-blog",
+  "number": 34,
+  "title": "feat: analytics dashboard (DevDigest + others)",
+  "body": "Same content as #24 / #31 (commit `f9d44c3`), opened from a fresh branch so `pull_request: opened` fires and the reviewers run again.\n\nThis run exercises the updated runner from #33:\n- the review body now leads with a summary and keeps each reviewer's findings behind a `<details>`\n- a 5xx from the review POST is re-checked against the PR before it fails the job\n\n<!-- This is an auto-generated comment: release notes by coderabbit.ai -->\n\n## Summary by CodeRabbit\n\n* **New Features**\n  * Added an admin Analytics dashboard with KPI cards, charts, top-content tables, recent comments, filters, date ranges, and CSV export.\n  * Added interactive chart drill-down views and loading, error, and empty states.\n  * Added public blog view tracking with duplicate-view prevention and referrer classification.\n  * Added “Written This Month” and “Published This Month” statistics to the admin dashboard.\n  * Added reusable loading placeholders and a pending badge style.\n\n* **Tests & Documentation**\n  * Expanded component and hook test coverage.\n  * Added the Analytics Dashboard specification.\n\n<!-- end of auto-generated comment: release notes by coderabbit.ai -->",
+  "headSha": "48040f0d06dc4b76024cf6fa517a965741603ea1"
+}

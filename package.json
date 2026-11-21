@@ -1,0 +1,27 @@
+{
+  "name": "ai-code-reviewer-workshop",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Build your own AI code reviewer: GitHub Action + OpenRouter + structured output + grounding + repository context. DevFest Warsaw 2026 workshop.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "review": "tsx src/index.ts",
+    "review:mock": "REVIEW_MOCK=1 tsx src/index.ts",
+    "record": "tsx scripts/record.ts",
+    "ui": "tsx ui/server.ts",
+    "test": "vitest run --dir test"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0",
+    "tsx": "^4.20.6",
+    "vitest": "^3.2.4"
+  }
+}
