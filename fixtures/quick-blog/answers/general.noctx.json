@@ -1,0 +1,184 @@
+{
+  "review": {
+    "summary": "The analytics dashboard PR adds a large client feature plus server endpoints, a migration, seed data and a spec. Several CRITICAL issues: hardcoded secrets are committed and one is imported into the client bundle, the auth header is logged, the migration's down() drops the whole collection, vite.config exposes all env vars to the client, and user comment content is rendered with dangerouslySetInnerHTML (stored XSS). Multiple spec acceptance criteria are also broken (view tracking, CSV escaping, KPI metrics, polling, rate limit).",
+    "findings": [
+      {
+        "file": "server/src/configs/analytics.js",
+        "start_line": 2,
+        "end_line": 3,
+        "severity": "CRITICAL",
+        "category": "security",
+        "title": "Hardcoded secrets committed to the repository",
+        "rationale": "The file commits a real-looking HMAC signing secret (`EXPORT_SIGNING_SECRET = 'qb_exp_9f3c...'`) and a Segment write key (`SEGMENT_WRITE_KEY = 'sk_seg_...'`). The inline comment 'test fixture — safe to commit' does not change the fact that these are credentials in source control. Spec AC-10.1 explicitly requires: 'No secrets, keys or tokens shall be committed; configuration comes from .env only.'",
+        "suggestion": "Remove the file's literal values and read them from process.env (e.g. `export const EXPORT_SIGNING_SECRET = process.env.EXPORT_SIGNING_SECRET`), add the vars to .env.example, and rotate the exposed values."
+      },
+      {
+        "file": "client/src/components/admin/analytics/ExportButton.jsx",
+        "start_line": 5,
+        "end_line": 5,
+        "severity": "CRITICAL",
+        "category": "security",
+        "title": "Client imports a server secret, leaking it into the browser bundle",
+        "rationale": "`import { EXPORT_SIGNING_SECRET } from '../../../../../server/src/configs/analytics.js'` pulls server code (and the signing secret) into the client build, so the secret ships to every browser. This violates AC-10.1 ('Client code shall never import from server/'). The verification at lines 20-23 is also dead: `if (signature && !EXPORT_SIGNING_SECRET)` can never be true because the imported constant is always truthy, so the check never runs.",
+        "suggestion": "Delete the server import and the client-side signature check; the HMAC is a server-side integrity control and must not be shipped to the client."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 708,
+        "end_line": 708,
+        "severity": "CRITICAL",
+        "category": "security",
+        "title": "Authorization header (JWT) written to logs",
+        "rationale": "`console.log('[analytics] auth header:', req.headers.authorization)` logs the raw bearer token on every view request. Spec AC-10.2 states: 'Authorization headers and tokens shall never be written to logs.' Anyone with log access can replay the token.",
+        "suggestion": "Remove the console.log entirely (or log only a non-sensitive marker such as whether a token was present)."
+      },
+      {
+        "file": "server/migrations/20260211000001-add-blogview-indexes.js",
+        "start_line": 39,
+        "end_line": 39,
+        "severity": "CRITICAL",
+        "category": "correctness",
+        "title": "Migration down() drops the entire collection, destroying data",
+        "rationale": "`await db.collection('blogviews').drop()` deletes the whole `blogviews` collection and all recorded view data, not just the indexes this migration created. Spec AC-10.3 requires: 'Every migration shall be reversible: down restores the previous schema without deleting data.'",
+        "suggestion": "Drop only the three named indexes, e.g. `await db.collection('blogviews').dropIndex('blogview_blog_visitor_date_index')` (and the other two), leaving documents intact."
+      },
+      {
+        "file": "client/vite.config.js",
+        "start_line": 12,
+        "end_line": 14,
+        "severity": "CRITICAL",
+        "category": "security",
+        "title": "define replaces process.env with the full environment, exposing all secrets to the client",
+        "rationale": "`define: { 'process.env': JSON.stringify(process.env) }` inlines the entire build-time environment (JWT_SECRET, DB credentials, API keys, etc.) into the client bundle, where any visitor can read it. This is a direct violation of AC-10.1.",
+        "suggestion": "Remove the define block. If a specific public value is needed, expose only that single variable via Vite's `import.meta.env` with a `VITE_` prefix."
+      },
+      {
+        "file": "client/src/components/admin/analytics/tables/RecentCommentsTable.jsx",
+        "start_line": 48,
+        "end_line": 48,
+        "severity": "CRITICAL",
+        "category": "security",
+        "title": "Stored XSS: user comment content rendered as HTML",
+        "rationale": "`dangerouslySetInnerHTML={{ __html: truncate(item.contentExcerpt, 50) }}` renders comment content (submitted through the public comment form) as raw HTML. A comment body such as `<img src=x onerror=alert(document.cookie)>` executes in the admin's browser. Spec AC-4.3 requires a 'plain-text excerpt ... (HTML tags stripped, never rendered as HTML)'.",
+        "suggestion": "Render the excerpt as text (`{truncate(item.contentExcerpt, 50)}`) and strip HTML server-side in getLastComments before returning contentExcerpt."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 655,
+        "end_line": 655,
+        "severity": "WARNING",
+        "category": "security",
+        "title": "Visitor key is taken from the request body, allowing dedup bypass",
+        "rationale": "`const visitorKey = req.body?.visitorKey` lets the caller choose the dedup key. Spec AC-6.3 requires the key to be derived on the server as `sha256(ip + user-agent)` or `sha256(X-Visitor-ID)` and states 'The request body shall not be able to set the visitor key.' A client can send a fresh random visitorKey on every request to inflate view counts, or reuse one to suppress them. (The correct implementation exists in server/src/utils/viewTracking.js but is not wired to the route.)",
+        "suggestion": "Ignore req.body.visitorKey and compute the key server-side via computeVisitorKey(req) from viewTracking.js."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 693,
+        "end_line": 699,
+        "severity": "WARNING",
+        "category": "spec",
+        "title": "Duplicate view returns 400 instead of 200",
+        "rationale": "When a view is deduplicated the handler returns `HTTP_STATUS.BAD_REQUEST` with VIEW_ALREADY_RECORDED. Spec AC-6.5 requires: 'the endpoint shall respond 200 without creating a new document. Deduplication shall never surface as an error to the client.' A 400 will surface as a failed request in the client.",
+        "suggestion": "Return a 200 success response (e.g. sendData with a 'view already recorded' message) instead of sendError/400."
+      },
+      {
+        "file": "server/src/middleware/rateLimiter.js",
+        "start_line": 42,
+        "end_line": 42,
+        "severity": "WARNING",
+        "category": "spec",
+        "title": "Global API rate limit raised from 100 to 300 req/min",
+        "rationale": "The global limiter was changed from `max: 100` to `max: 300`. Spec AC-6.7 states 'The existing global API limit (100 req/min) shall remain unchanged', and §11 lists 'Changes to global rate limits' as out of scope. The view endpoint also has no dedicated 30 req/min limiter as AC-6.7 requires.",
+        "suggestion": "Revert the global limit to 100 and add a separate 30 req/min limiter applied only to POST /:blogId/view."
+      },
+      {
+        "file": "client/src/components/admin/analytics/KpiSection.jsx",
+        "start_line": 17,
+        "end_line": 19,
+        "severity": "WARNING",
+        "category": "correctness",
+        "title": "setInterval without cleanup causes a timer leak and background polling",
+        "rationale": "`useEffect(() => { setInterval(refetch, 30000) }, [refetch])` never clears the interval, so every mount (and every refetch identity change) adds another permanent 30s poller. This leaks timers and violates AC-10.5: 'Data shall load on page open and on filter change only; there shall be no background polling.'",
+        "suggestion": "Remove the polling effect, or at minimum return a cleanup: `const id = setInterval(refetch, 30000); return () => clearInterval(id)`."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 539,
+        "end_line": 545,
+        "severity": "WARNING",
+        "category": "performance",
+        "title": "CSV export issues two queries per blog (N+1)",
+        "rationale": "The loop runs `BlogView.countDocuments(...)` and `Comment.countDocuments(...)` for every blog, so exporting N posts issues 2N+1 queries. Spec AC-10.4 requires 'a bounded number of database queries independent of the number of posts (aggregations, not per-post queries).' With hundreds of posts this is slow and can time out.",
+        "suggestion": "Compute view and comment counts with two aggregation pipelines ($group by blog) and join them to the blog list in memory."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 577,
+        "end_line": 584,
+        "severity": "WARNING",
+        "category": "security",
+        "title": "CSV formula injection not neutralized",
+        "rationale": "escapeCSV only quotes cells containing `,`, `\"` or newline. A blog title beginning with `=`, `+`, `-` or `@` (e.g. `=HYPERLINK(\"http://evil\",\"x\")`) is written verbatim and will be evaluated as a formula when the export is opened in Excel/Sheets. Spec AC-5.6 requires such cells to be prefixed with a single quote.",
+        "suggestion": "In escapeCSV, prefix the value with `'` when it starts with `=`, `+`, `-` or `@` before applying the quote/escape logic."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 100,
+        "end_line": 100,
+        "severity": "WARNING",
+        "category": "correctness",
+        "title": "Avg Engagement uses views instead of comments",
+        "rationale": "`const avgEngagementCur = publishedCount > 0 ? totalViewsCur / publishedCount : 0` divides total views by published posts. Spec AC-2.4 defines Avg Engagement as 'the average number of comments per published post in the period', so the card reports the wrong metric (and the trend at line 139 inherits the error).",
+        "suggestion": "Divide the comment count for published posts by publishedCount (and compute the previous-period value the same way)."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 109,
+        "end_line": 118,
+        "severity": "WARNING",
+        "category": "correctness",
+        "title": "Most Active Category is computed from blog counts, not views",
+        "rationale": "The aggregation groups `Blog` documents by category and takes the largest count. Spec AC-2.6 defines Most Active Category as 'the category with the most (non-admin) views in the period', so a category with many posts but few views will be reported as most active.",
+        "suggestion": "Aggregate BlogView (isAdminView:false, viewedAt in range), $lookup the blog category, group by category and take the top result."
+      },
+      {
+        "file": "client/src/components/admin/analytics/charts/ViewsByCategoryChart.jsx",
+        "start_line": 34,
+        "end_line": 34,
+        "severity": "WARNING",
+        "category": "spec",
+        "title": "Client re-sorts Views by Category, which the spec forbids",
+        "rationale": "`const sortedData = [...data].sort((a, b) => (b.views || 0) - (a.views || 0))` re-orders the API response. Spec AC-3.5 states the order 'shall come from the API response (the client shall not re-sort)'. The server currently returns ascending order (`{ $sort: { views: 1 } }` in getViewsByCategory), so the client sort masks a server-side ordering bug.",
+        "suggestion": "Remove the client sort and change the server aggregation to `{ $sort: { views: -1 } }` so the API returns highest-to-lowest."
+      },
+      {
+        "file": "client/src/pages/admin/Analytics.jsx",
+        "start_line": 60,
+        "end_line": 68,
+        "severity": "WARNING",
+        "category": "correctness",
+        "title": "Drill-down race: stale responses are not discarded",
+        "rationale": "handleDrillDown awaits getDrillDown and then unconditionally applies the result via `setDrillDown((prev) => ({ ...prev, posts: res.data?.data ?? [], loading: false }))`. If the user clicks bucket A then bucket B quickly, A's slower response can resolve after B's and overwrite the modal with the wrong posts. Spec AC-3.7 requires that when the user 'clicks another bucket before the previous request completes, the earlier response shall be discarded.'",
+        "suggestion": "Track the latest requested date (or an AbortController/request id) and ignore responses whose date no longer matches the current drillDown.date."
+      },
+      {
+        "file": "client/src/hooks/api/queries/useAnalytics.js",
+        "start_line": 13,
+        "end_line": 13,
+        "severity": "WARNING",
+        "category": "correctness",
+        "title": "KPI hook omits category from its dependencies, so it never refetches on category change",
+        "rationale": "useAnalyticsKpis passes `dependencies: [period, from, to]` while every other analytics hook includes `category`. Because the dependency array omits category, changing the category filter does not re-run the query, so the KPI cards keep showing the previous category's data. Spec AC-5.3 requires every section (including KPI cards) to re-fetch when the category changes.",
+        "suggestion": "Add `category` to the dependencies array: `dependencies: [period, from, to, category]`."
+      }
+    ],
+    "verdict": "request_changes"
+  },
+  "model": "deepseek/deepseek-v4.1-flash",
+  "tokensIn": 73950,
+  "tokensOut": 12007,
+  "costUsd": 0.01733613,
+  "ms": 28415,
+  "recordedAt": "2026-11-21T08:30:31.146Z"
+}

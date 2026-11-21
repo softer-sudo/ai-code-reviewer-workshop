@@ -1,0 +1,174 @@
+{
+  "review": {
+    "summary": "The PR implements the analytics dashboard, but several acceptance criteria are violated in the server-side view tracking and analytics endpoints. The most serious issues are in `recordView`: the visitor key and referrer source are taken from the request body instead of being derived on the server, duplicate views return a 400 error, and the Authorization header is logged. CSV export also lacks formula-injection escaping, and the global rate limit was changed even though the spec says it must remain unchanged.",
+    "findings": [
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 655,
+        "end_line": 655,
+        "severity": "CRITICAL",
+        "category": "spec",
+        "title": "AC-6.3: visitor key can be set from the request body",
+        "rationale": "The controller reads `req.body?.visitorKey` and requires it. AC-6.3 requires the visitor key to be derived on the server as `sha256(ip + user-agent)` or `sha256(X-Visitor-ID header)` and explicitly forbids the request body from setting it. The correct helper `computeVisitorKey` exists in `server/src/utils/viewTracking.js` but is never used by this endpoint.",
+        "suggestion": "Use `computeVisitorKey(req)` from `server/src/utils/viewTracking.js` and remove the body-based visitor key requirement."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 656,
+        "end_line": 656,
+        "severity": "WARNING",
+        "category": "spec",
+        "title": "AC-6.4: referrer source is taken from the request body instead of the Referer header",
+        "rationale": "`referrerSource` is read from `req.body?.referrerSource` and defaults to `'direct'`. AC-6.4 requires the server to classify the source from the `Referer` header. The `classifyReferrer` helper in `server/src/utils/viewTracking.js` is unused.",
+        "suggestion": "Call `classifyReferrer(req.get('referer') || req.get('referrer'))` and ignore any body-supplied referrer."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 697,
+        "end_line": 697,
+        "severity": "CRITICAL",
+        "category": "spec",
+        "title": "AC-6.5: duplicate view returns 400 instead of 200",
+        "rationale": "When a view within 24 hours already exists, the endpoint responds with `HTTP_STATUS.BAD_REQUEST` and `VIEW_ALREADY_RECORDED`. AC-6.5 requires the endpoint to respond `200` without creating a new document and states that deduplication shall never surface as an error to the client.",
+        "suggestion": "Return `sendData(res, { message: SUCCESS_MESSAGES.VIEW_RECORDED })` (200) when a duplicate is detected."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 710,
+        "end_line": 710,
+        "severity": "WARNING",
+        "category": "spec",
+        "title": "AC-6.6: only role 'admin' is treated as an admin view; 'author' is ignored",
+        "rationale": "The JWT role check is `decoded?.role === 'admin'`. AC-6.6 requires views from a valid JWT with role `admin` **or** `author` to be stored with `isAdminView: true` and excluded from statistics.",
+        "suggestion": "Accept both `admin` and `author` roles when setting `isAdminView`."
+      },
+      {
+        "file": "server/src/routes/blogRoutes.js",
+        "start_line": 24,
+        "end_line": 24,
+        "severity": "WARNING",
+        "category": "spec",
+        "title": "AC-6.7: view endpoint has no dedicated 30 req/min rate limit",
+        "rationale": "`blogRouter.post('/:blogId/view', recordView)` is mounted without a rate limiter. AC-6.7 requires the view endpoint to have its own limit of 30 requests per minute per IP.",
+        "suggestion": "Add a dedicated `viewLimiter` (30/min) to the view route."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 682,
+        "end_line": 682,
+        "severity": "WARNING",
+        "category": "spec",
+        "title": "AC-6.8: unpublished posts return 400 instead of 404",
+        "rationale": "For an unpublished post the controller returns `HTTP_STATUS.BAD_REQUEST`. AC-6.8 requires unpublished or unknown posts to return `404`.",
+        "suggestion": "Return `HTTP_STATUS.NOT_FOUND` for unpublished posts."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 708,
+        "end_line": 708,
+        "severity": "CRITICAL",
+        "category": "spec",
+        "title": "AC-10.2: Authorization header is written to logs",
+        "rationale": "`console.log('[analytics] auth header:', req.headers.authorization)` logs the full Authorization header, including the bearer token. AC-10.2 forbids writing authorization headers or tokens to logs.",
+        "suggestion": "Remove the log statement or log only a non-sensitive marker."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 343,
+        "end_line": 343,
+        "severity": "WARNING",
+        "category": "spec",
+        "title": "AC-3.5: views-by-category is sorted ascending instead of descending",
+        "rationale": "The aggregation uses `{ $sort: { views: 1 } }`, which returns lowest-to-highest. AC-3.5 requires the API to return categories sorted from highest to lowest views.",
+        "suggestion": "Change the sort to `{ $sort: { views: -1 } }`."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 523,
+        "end_line": 523,
+        "severity": "WARNING",
+        "category": "spec",
+        "title": "AC-4.3: recent comment excerpt is not HTML-stripped and is 100 chars instead of 120",
+        "rationale": "`contentExcerpt` slices the raw `c.content` at 100 characters without stripping HTML tags. AC-4.3 requires a plain-text excerpt of at most 120 characters with HTML tags stripped and never rendered as HTML.",
+        "suggestion": "Strip HTML tags (e.g. with the existing `stripHtmlTags` helper) and truncate to 120 characters."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 580,
+        "end_line": 580,
+        "severity": "CRITICAL",
+        "category": "spec",
+        "title": "AC-5.6: CSV escaping does not neutralize formula-injection prefixes",
+        "rationale": "`escapeCSV` only quotes cells containing commas, quotes or newlines. AC-5.6 also requires any cell starting with `=`, `+`, `-` or `@` to be prefixed with a single quote so spreadsheet applications do not evaluate it.",
+        "suggestion": "After stringifying, prefix cells matching `/^[=+\\-@]/` with a single quote before quoting."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 539,
+        "end_line": 539,
+        "severity": "WARNING",
+        "category": "spec",
+        "title": "AC-10.4: CSV export issues per-post queries (N+1)",
+        "rationale": "`exportCsv` loops over every blog and runs `BlogView.countDocuments` and `Comment.countDocuments` per post. AC-10.4 requires each analytics endpoint to issue a bounded number of database queries independent of the number of posts.",
+        "suggestion": "Replace the loop with aggregations that group views and comments by blog in a single query."
+      },
+      {
+        "file": "server/src/validators/analyticsValidator.js",
+        "start_line": 45,
+        "end_line": 45,
+        "severity": "WARNING",
+        "category": "spec",
+        "title": "AC-5.4: custom range `to` is midnight UTC, excluding the rest of the day",
+        "rationale": "`parseDate` builds `new Date(str + 'T00:00:00.000Z')`, so `to` is the start of the day. Queries use `$lte: to`, so views later on the `to` calendar day are excluded. AC-5.4 requires the `to` date to be inclusive for the whole UTC day.",
+        "suggestion": "Set `to` to the end of the day (e.g. `new Date(str + 'T23:59:59.999Z')`) or add 24h minus 1ms."
+      },
+      {
+        "file": "server/src/validators/analyticsValidator.js",
+        "start_line": 40,
+        "end_line": 40,
+        "severity": "WARNING",
+        "category": "spec",
+        "title": "AC-5.2: custom range is ignored when period is 'all'",
+        "rationale": "The `period === 'all'` branch runs before the `fromStr || toStr` branch and overwrites `from`/`to` with all-time. AC-5.2 requires a custom range to take precedence over the quick period.",
+        "suggestion": "Check for `fromStr`/`toStr` before handling `period === 'all'`, or only apply all-time when no custom range is supplied."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 148,
+        "end_line": 148,
+        "severity": "WARNING",
+        "category": "spec",
+        "title": "AC-2.7: most-active-category trend is hardcoded",
+        "rationale": "The `mostActiveCategory` card returns `trend: { direction: 'unchanged', percentChange: 0 }` unconditionally. AC-2.7 requires each card to show a trend versus the previous period of equal length when the period is bounded.",
+        "suggestion": "Compute the previous-period most-active category and pass it through `calculateTrend`."
+      },
+      {
+        "file": "server/src/middleware/rateLimiter.js",
+        "start_line": 42,
+        "end_line": 42,
+        "severity": "WARNING",
+        "category": "spec",
+        "title": "Out of scope: global API rate limit changed from 100 to 300 req/min",
+        "rationale": "The spec's §11 lists changes to global rate limits as out of scope, and AC-6.7 states the existing global API limit (100 req/min) shall remain unchanged. This diff raises `apiLimiter.max` to 300.",
+        "suggestion": "Revert the global limit to 100 and give the analytics endpoints their own dedicated limiter if needed."
+      },
+      {
+        "file": "server/src/controllers/analyticsController.js",
+        "start_line": 359,
+        "end_line": 361,
+        "severity": "WARNING",
+        "category": "spec",
+        "title": "Out of scope: free-text search filter added to top-viewed",
+        "rationale": "The spec's §11 lists search / free-text filtering of posts as out of scope. The diff adds `if (req.query.search) { blogFilter.title = { $regex: req.query.search, $options: 'i' } }` to `getTopViewed`.",
+        "suggestion": "Remove the search filter from this PR."
+      }
+    ],
+    "verdict": "request_changes"
+  },
+  "model": "deepseek/deepseek-v4.1-flash",
+  "tokensIn": 84656,
+  "tokensOut": 25007,
+  "costUsd": 0.02004949,
+  "ms": 115749,
+  "recordedAt": "2026-11-21T08:29:39.713Z"
+}

@@ -1,0 +1,7 @@
+{
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:22",
+  "postCreateCommand": "npm ci",
+  "secrets": {
+    "OPENROUTER_API_KEY": { "description": "OpenRouter key from the workshop card or openrouter.ai/keys" }
+  }
+}

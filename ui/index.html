@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI reviewer</title>
+<style>
+  :root { --bg:#fff; --fg:#1d1f23; --mut:#5b6270; --line:#e5e7eb; --red:#d93025; --yel:#b06000; --blu:#1558b0; --grn:#146c2e; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#16181d; --fg:#e8eaed; --mut:#9aa0a6; --line:#2d3036; --red:#f28b82; --yel:#fdd663; --blu:#8ab4f8; --grn:#81c995; } }
+  body { font: 14px/1.45 system-ui, sans-serif; background: var(--bg); color: var(--fg); margin: 0 auto; max-width: 980px; padding: 16px; }
+  h1 { font-size: 20px; margin: 0 0 12px; } h2 { font-size: 15px; margin: 20px 0 6px; }
+  form { display: grid; gap: 8px; border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+  label { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; } .row { display: flex; gap: 16px; flex-wrap: wrap; }
+  input[type=text] { flex: 1; min-width: 220px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: inherit; font: inherit; }
+  button { padding: 7px 18px; border-radius: 6px; border: 0; background: var(--blu); color: var(--bg); font: inherit; cursor: pointer; width: fit-content; }
+  button:disabled { opacity: .5; }
+  table { border-collapse: collapse; width: 100%; } td, th { border-top: 1px solid var(--line); padding: 5px 8px; text-align: left; vertical-align: top; }
+  .CRITICAL { color: var(--red); font-weight: 600 } .WARNING { color: var(--yel); font-weight: 600 } .SUGGESTION { color: var(--blu); font-weight: 600 }
+  .mut { color: var(--mut); } .note { color: var(--yel); } .err { color: var(--red); }
+  pre { background: color-mix(in srgb, var(--fg) 6%, transparent); padding: 8px; border-radius: 6px; overflow-x: auto; margin: 0; }
+  .gate { font-size: 18px; font-weight: 700; } .PASS { color: var(--grn); } .FAIL { color: var(--red); }
+  details summary { cursor: pointer; }
+</style>
+</head>
+<body>
+<h1>AI reviewer</h1>
+<form id="f">
+  <label>PR <input type="text" id="pr" placeholder="owner/repo#123"></label>
+  <div class="row" id="agents"></div>
+  <label>Model override <input type="text" id="model" placeholder="empty = each agent's own model, e.g. anthropic/claude-sonnet-4.5"></label>
+  <div class="row">
+    <label><input type="checkbox" id="ctx" checked> use repository context</label>
+    <label><input type="checkbox" id="mock"> mock (offline, recorded)</label>
+  </div>
+  <button id="run" type="submit">Run review</button>
+</form>
+<div id="out"></div>
+
+<script>
+// Everything that comes from the model or the PR is untrusted: it only ever goes through textContent.
+const $ = (id) => document.getElementById(id);
+function el(tag, text, cls, parent) {
+  const e = document.createElement(tag);
+  if (text !== undefined && text !== null) e.textContent = String(text);
+  if (cls) e.className = cls;
+  if (parent) parent.append(e);
+  return e;
+}
+const n = (x) => Number(x || 0).toLocaleString('en-US');
+
+fetch('/api/config').then((r) => r.json()).then((c) => {
+  $('pr').value = c.pr;
+  for (const a of c.agents) {
+    const l = el('label', null, null, $('agents'));
+    const cb = el('input', null, null, l);
+    cb.type = 'checkbox'; cb.checked = true; cb.value = a.id;
+    l.append(' ' + a.name + ' ');
+    el('span', a.model, 'mut', l);
+  }
+});
+
+function render(r) {
+  const out = $('out');
+  out.replaceChildren();
+  el('p', `${r.pr.owner}/${r.pr.repo}#${r.pr.number} · ${r.pr.title}`, 'mut', out);
+  for (const note of r.notes) el('p', 'not implemented yet: ' + note, 'note', out);
+
+  const g = el('p', null, 'gate', out);
+  el('span', r.gate, r.gate, g);
+  g.append(`  ${r.blockers} blocker(s) · ${n(r.totals.tokensIn)} in / ${n(r.totals.tokensOut)} out tokens · $${r.totals.costUsd.toFixed(5)}`);
+
+  el('h2', `Findings (${r.merged.length} after dedup)`, null, out);
+  if (!r.merged.length) el('p', 'none', 'mut', out);
+  const ft = el('table', null, null, out);
+  for (const f of r.merged) {
+    const tr = el('tr', null, null, ft);
+    el('td', f.severity ?? '(no severity)', f.severity, tr);
+    el('td', (f.agents ?? []).join(', '), 'mut', tr);
+    el('td', `${f.file}:${f.start_line}${f.end_line !== f.start_line ? '-' + f.end_line : ''}`, null, tr);
+    const td = el('td', null, null, tr);
+    const d = el('details', null, null, td);
+    el('summary', f.title, null, d);
+    el('p', f.rationale, null, d);
+    if (f.suggestion) el('p', 'Suggestion: ' + f.suggestion, 'mut', d);
+  }
+
+  const dropped = r.agents.flatMap((a) => a.dropped.map((d) => ({ ...d, agent: a.name })));
+  el('h2', `Dropped by grounding (${dropped.length})`, null, out);
+  if (!dropped.length) el('p', 'nothing dropped', 'mut', out);
+  for (const d of dropped) el('p', `${d.agent}: ${d.title} — ${d.reason}`, 'mut', out);
+
+  el('h2', 'Agents', null, out);
+  const at = el('table', null, null, out);
+  for (const a of r.agents) {
+    const tr = el('tr', null, null, at);
+    el('td', a.name, null, tr);
+    el('td', a.model, 'mut', tr);
+    el('td', `${n(a.tokensIn)} in / ${n(a.tokensOut)} out`, null, tr);
+    el('td', '$' + a.costUsd.toFixed(5), null, tr);
+    el('td', `${a.findings.length} kept, ${a.dropped.length} dropped`, 'mut', tr);
+  }
+
+  el('h2', 'Context', null, out);
+  el('pre', r.contextLog.length ? r.contextLog.join('\n') : 'context off', null, out);
+}
+
+$('f').addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const agents = [...document.querySelectorAll('#agents input:checked')].map((c) => c.value);
+  const out = $('out');
+  if (!agents.length) return el('p', 'Select at least one agent', 'err', out);
+  $('run').disabled = true;
+  out.replaceChildren(el('p', 'Running…', 'mut'));
+  try {
+    const res = await fetch('/api/review', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pr: $('pr').value.trim() || undefined, agents, model: $('model').value.trim() || undefined, noContext: !$('ctx').checked, mock: $('mock').checked }),
+    });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.error || res.statusText);
+    render(body);
+  } catch (e) {
+    out.replaceChildren(el('p', 'Review failed: ' + e.message, 'err'));
+  } finally {
+    $('run').disabled = false;
+  }
+});
+</script>
+</body>
+</html>
