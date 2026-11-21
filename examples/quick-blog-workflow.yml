@@ -1,0 +1,58 @@
+# Copy this file into YOUR fork of burnjohn/quick-blog as .github/workflows/ai-review.yml (on main; PRs go analytics -> main).
+# It checks out the fork itself (for context) and YOUR reviewer repo, then reviews every pull request in the fork.
+#
+# THE 4 SECURITY RULES (do not remove):
+#   1. Trigger on `pull_request`, never `pull_request_target` (that one runs untrusted code WITH secrets).
+#   2. Least privilege: `permissions` is contents: read + pull-requests: write. Nothing else.
+#   3. Fork guard: skip PRs whose head repo is not this repo (secrets must never meet foreign code).
+#   4. PR text (title, body, branch name) never goes into `run:` through ${{ }}. It reaches the code only via the API / env.
+name: AI code review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+# TODO(step 3, rule 2): add a top-level `permissions:` block with contents: read and pull-requests: write.
+
+concurrency:
+  group: ai-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    # TODO(step 3, rule 3): add the fork guard: `if:` the head repo full_name equals github.repository.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # 1) this fork at the PR head: the reviewer reads rules, specs and changed files from here
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          # TODO(step 3): persist-credentials: false (here and in the second checkout)
+
+      # 2) your reviewer: a public repo, so no token is needed
+      - uses: actions/checkout@v5
+        with:
+          repository: ${{ github.repository_owner }}/ai-code-reviewer-workshop
+          path: reviewer
+          # Which branch of YOUR reviewer repo CI runs: `final` (always there) unless you set the
+          # Actions variable REVIEWER_REF to your own branch, e.g. after `git push origin HEAD:my-reviewer`.
+          ref: ${{ vars.REVIEWER_REF || 'final' }}
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: reviewer/package-lock.json
+
+      - run: npm ci
+        working-directory: reviewer
+
+      # Fixed command (rule 4). `--repo-dir ..` = the fork checkout; the PR number comes from env, not from the shell line.
+      - run: npx tsx src/index.ts --ci --repo-dir ..
+        working-directory: reviewer
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REVIEW_MODEL: ${{ vars.REVIEW_MODEL }}
